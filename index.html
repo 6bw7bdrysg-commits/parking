@@ -10,6 +10,13 @@
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100vh; width: 100vw; }
         
+        /* Κουμπί επαναφοράς θέσης */
+        .my-location-btn {
+            position: absolute; top: 10px; right: 10px; z-index: 1000;
+            background: white; padding: 10px; border-radius: 5px;
+            cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
         /* Mobile-friendly buttons */
         .btn-action, .nav-btn, .occupy-btn { 
             border: none; padding: 12px; width: 100%; margin-top: 8px; 
@@ -23,6 +30,7 @@
 </head>
 <body>
     <div id="map"></div>
+    <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
@@ -34,26 +42,34 @@
             maxZoom: 19
         }).addTo(map);
 
-        // Fix για περιστροφή κινητού
         window.addEventListener('resize', () => map.invalidateSize());
 
         var markers = [];
         var userMarker = null;
 
-        function autoLocate() {
+        function resetUserMarker() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((pos) => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
+                    
+                    if (userMarker) {
+                        userMarker.setLatLng([lat, lng]);
+                    } else {
+                        userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
+                            .bindPopup(`
+                                <div style="text-align:center;"><b>Είσαι εδώ!</b><br>
+                                <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
+                                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>
+                            `).openPopup();
+                    }
                     map.setView([lat, lng], 17);
-                    userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
-                        .bindPopup(`
-                            <div style="text-align:center;"><b>Είσαι εδώ!</b><br>
-                            <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
-                            <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>
-                        `).openPopup();
                 }, null, { enableHighAccuracy: true });
             }
+        }
+
+        function autoLocate() {
+            resetUserMarker();
         }
 
         function submitPosition(isUserMarker) {
