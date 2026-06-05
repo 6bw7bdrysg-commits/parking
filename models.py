@@ -15,6 +15,6 @@ class DBParkingSpot(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     minutes_until_free = Column(Integer)
-    # Προσθήκη στήλης για τη φωτογραφία (αποθηκεύουμε το Base64 string)
     photo = Column(String, nullable=True) 
+    is_public = Column(Boolean, default=True) # Προσθήκη για έλεγχο δημοσίευσης
     created_at = Column(DateTime(timezone=True), server_default=func.now())
