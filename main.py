@@ -1,6 +1,6 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -8,10 +8,12 @@ from typing import Optional
 from database import engine, get_db, SessionLocal
 import models
 
+# Δημιουργία των πινάκων στη βάση
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# Middleware για CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,6 +22,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Ορισμός της διαδρομής του αρχείου index.html
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+INDEX_FILE = os.path.join(BASE_DIR, "index.html")
 
 @app.on_event("startup")
 def startup_event():
@@ -38,7 +43,7 @@ class ParkingSpotCreate(BaseModel):
 
 @app.get("/")
 def read_root():
-    return FileResponse("index.html")
+    return FileResponse(INDEX_FILE)
 
 @app.post("/free-spot")
 def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db)):
