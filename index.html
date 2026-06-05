@@ -58,8 +58,10 @@
                 let data = await res.json();
                 localStorage.setItem('userId', data.user_id);
                 localStorage.setItem('username', data.username);
+                
+                // Κλείσιμο overlay και άμεσος εντοπισμός
                 document.getElementById('loginOverlay').style.display = 'none';
-                location.reload();
+                resetUserMarker();
             } catch (e) { alert("Αποτυχία σύνδεσης."); }
         }
 
