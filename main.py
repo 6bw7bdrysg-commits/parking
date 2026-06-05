@@ -8,12 +8,12 @@ from typing import Optional
 from database import engine, get_db, SessionLocal
 import models
 
-# Δημιουργία των πινάκων στη βάση
+# Δημιουργία πινάκων στη βάση
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Middleware για CORS
+# Επιτρέπουμε όλες τις προσπελάσεις για το frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Ορισμός της διαδρομής του αρχείου index.html
+# Σωστό path για το index.html στο Render
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INDEX_FILE = os.path.join(BASE_DIR, "index.html")
 
@@ -43,7 +43,10 @@ class ParkingSpotCreate(BaseModel):
 
 @app.get("/")
 def read_root():
-    return FileResponse(INDEX_FILE)
+    if os.path.exists(INDEX_FILE):
+        return FileResponse(INDEX_FILE)
+    else:
+        return {"error": f"Το αρχείο index.html δεν βρέθηκε στο {INDEX_FILE}"}
 
 @app.post("/free-spot")
 def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db)):
