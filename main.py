@@ -43,10 +43,17 @@ class ParkingSpotCreate(BaseModel):
 
 @app.get("/")
 def read_root():
+    path_to_check = os.path.join(BASE_DIR, "parking")
+    files_in_folder = os.listdir(path_to_check) if os.path.exists(path_to_check) else "Ο φάκελος δεν υπάρχει"
+    
     if os.path.exists(INDEX_FILE):
         return FileResponse(INDEX_FILE)
     else:
-        return {"error": f"Το αρχείο index.html δεν βρέθηκε στο {INDEX_FILE}"}
+        return {
+            "error": "Το αρχείο δεν βρέθηκε",
+            "looked_at": INDEX_FILE,
+            "files_found_in_parking": str(files_in_folder)
+        }
 
 @app.post("/free-spot")
 def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db)):
