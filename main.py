@@ -6,7 +6,6 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
 from database import engine, get_db, SessionLocal
-from a2wsgi import ASGIMiddleware
 import models
 
 models.Base.metadata.create_all(bind=engine)
@@ -21,9 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- ΕΔΩ ΤΟ ΜΕΤΑΣΧΗΜΑΤΙΣΜΟ ---
-application = ASGIMiddleware(app)
-# -----------------------------
 
 @app.on_event("startup")
 def startup_event():
