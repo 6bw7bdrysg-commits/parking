@@ -2,16 +2,23 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Koinon Parking</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { font-family: Arial; margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100%; }
-        .btn-action { background-color: #28a745; color: white; border: none; padding: 10px; width: 100%; margin-top: 5px; cursor: pointer; }
-        .nav-btn { background-color: #007bff; color: white; border: none; padding: 8px; width: 100%; margin-top: 5px; cursor: pointer; }
-        .occupy-btn { background-color: #dc3545; color: white; border: none; padding: 8px; width: 100%; margin-top: 5px; cursor: pointer; }
-        .photo-preview { max-width: 150px; display: block; margin: 5px auto; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
+        #map { height: 100vh; width: 100vw; }
+        
+        /* Mobile-friendly buttons */
+        .btn-action, .nav-btn, .occupy-btn { 
+            border: none; padding: 12px; width: 100%; margin-top: 8px; 
+            cursor: pointer; font-size: 16px; border-radius: 8px; font-weight: bold;
+        }
+        .btn-action { background-color: #28a745; color: white; }
+        .nav-btn { background-color: #007bff; color: white; }
+        .occupy-btn { background-color: #dc3545; color: white; }
+        .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -19,17 +26,16 @@
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
-        // Το maxZoom: 20 επιτρέπει πολύ μεγαλύτερο ζουμ από το προεπιλεγμένο
-var map = L.map('map', {
-    maxZoom: 20,
-    minZoom: 3
-}).setView([39.6384, 22.4152], 14);
-        // Παράδειγμα για Dark mode χάρτη
-// Χρησιμοποιούμε τον CartoDB Positron για καθαρή εμφάνιση δρόμων
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-    maxZoom: 19
-}).addTo(map);
+        
+        var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
+        
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © Esri',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Fix για περιστροφή κινητού
+        window.addEventListener('resize', () => map.invalidateSize());
 
         var markers = [];
         var userMarker = null;
@@ -43,7 +49,7 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
                     userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
                         .bindPopup(`
                             <div style="text-align:center;"><b>Είσαι εδώ!</b><br>
-                            <input type="file" id="photoInput" accept="image/*" style="width:90%; margin:5px 0;">
+                            <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
                             <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>
                         `).openPopup();
                 }, null, { enableHighAccuracy: true });
@@ -69,12 +75,11 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
             lastClickedLatLng = e.latlng;
             L.popup().setLatLng(e.latlng).setContent(`
                 <div style="text-align:center;"><b>Νέα θέση</b><br>
-                <input type="file" id="clickPhotoInput" accept="image/*" style="width:90%; margin:5px 0;">
+                <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;">
                 <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>
             `).openOn(map);
         });
 
-        // Συνάρτηση για πλοήγηση
         function getDirections(lat, lng) {
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
         }
@@ -108,8 +113,8 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
                         .bindPopup(`
                             ${photoHtml}
-                            Λήγει σε: ${remaining} λεπτά<br>
-                            <button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες Πλοήγησης</button><br>
+                            <b>Λήγει σε: ${remaining} λεπτά</b><br>
+                            <button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες</button>
                             <button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>
                         `);
                     markers.push(marker);
