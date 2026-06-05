@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Koinon Parking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { font-family: Arial; margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100%; }
+        .btn-action { background-color: #28a745; color: white; border: none; padding: 10px; width: 100%; margin-top: 5px; cursor: pointer; }
+        .nav-btn { background-color: #007bff; color: white; border: none; padding: 8px; width: 100%; margin-top: 5px; cursor: pointer; }
+        .occupy-btn { background-color: #dc3545; color: white; border: none; padding: 8px; width: 100%; margin-top: 5px; cursor: pointer; }
+        .photo-preview { max-width: 150px; display: block; margin: 5px auto; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <script>
+        const API_BASE_URL = "https://georgeliask.pythonanywhere.com";
+        var map = L.map('map').setView([39.6384, 22.4152], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+
+        var markers = [];
+        var userMarker = null;
+
+        function autoLocate() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    map.setView([lat, lng], 17);
+                    userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
+                        .bindPopup(`
+                            <div style="text-align:center;"><b>Είσαι εδώ!</b><br>
+                            <input type="file" id="photoInput" accept="image/*" style="width:90%; margin:5px 0;">
+                            <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>
+                        `).openPopup();
+                }, null, { enableHighAccuracy: true });
+            }
+        }
+
+        function submitPosition(isUserMarker) {
+            const file = document.getElementById(isUserMarker ? 'photoInput' : 'clickPhotoInput').files[0];
+            const pos = isUserMarker ? userMarker.getLatLng() : lastClickedLatLng;
+            let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
+            
+            if (mins) {
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => sendToServer(pos.lat, pos.lng, mins, reader.result);
+                    reader.readAsDataURL(file);
+                } else { sendToServer(pos.lat, pos.lng, mins, null); }
+            }
+        }
+
+        var lastClickedLatLng = null;
+        map.on('click', function(e) {
+            lastClickedLatLng = e.latlng;
+            L.popup().setLatLng(e.latlng).setContent(`
+                <div style="text-align:center;"><b>Νέα θέση</b><br>
+                <input type="file" id="clickPhotoInput" accept="image/*" style="width:90%; margin:5px 0;">
+                <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>
+            `).openOn(map);
+        });
+
+        // Συνάρτηση για πλοήγηση
+        function getDirections(lat, lng) {
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
+        }
+
+        async function sendToServer(lat, lng, mins, photo) {
+            await fetch(`${API_BASE_URL}/free-spot`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: 1, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo})
+            });
+            map.closePopup();
+            loadSpots();
+        }
+
+        async function loadSpots() {
+            let res = await fetch(`${API_BASE_URL}/search-spots?user_id=1`);
+            let data = await res.json();
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+            data.spots.forEach(spot => {
+                let created = new Date(spot.created_at + "Z");
+                let remaining = spot.minutes_until_free - Math.floor((new Date() - created) / 60000);
+                if (remaining > 0) {
+                    let color = remaining <= 3 ? 'red' : 'green';
+                    let icon = new L.Icon({
+                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                    });
+                    let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
+                    let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
+                        .bindPopup(`
+                            ${photoHtml}
+                            Λήγει σε: ${remaining} λεπτά<br>
+                            <button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες Πλοήγησης</button><br>
+                            <button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>
+                        `);
+                    markers.push(marker);
+                }
+            });
+        }
+
+        async function occupySpot(id) {
+            await fetch(`${API_BASE_URL}/occupy-spot/${id}`, { method: 'DELETE' });
+            loadSpots();
+        }
+
+        autoLocate();
+        loadSpots();
+        setInterval(loadSpots, 5000);
+    </script>
+</body>
+</html>
