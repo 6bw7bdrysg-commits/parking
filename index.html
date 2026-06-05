@@ -40,9 +40,8 @@
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         
-        if (!localStorage.getItem('userId')) {
-            document.getElementById('loginOverlay').style.display = 'flex';
-        } else {
+        // Έλεγχος αν υπάρχει ήδη σύνδεση κατά το άνοιγμα της σελίδας
+        if (localStorage.getItem('userId')) {
             document.getElementById('loginOverlay').style.display = 'none';
         }
 
@@ -59,9 +58,8 @@
                 localStorage.setItem('userId', data.user_id);
                 localStorage.setItem('username', data.username);
                 
-                // Κλείσιμο overlay και άμεσος εντοπισμός
                 document.getElementById('loginOverlay').style.display = 'none';
-                resetUserMarker();
+                resetUserMarker(); // Εντοπισμός αμέσως μετά το login
             } catch (e) { alert("Αποτυχία σύνδεσης."); }
         }
 
@@ -152,7 +150,13 @@
             loadSpots();
         }
 
-        autoLocate();
+        // Αυτόματη εκτέλεση κατά τη φόρτωση
+        window.onload = () => {
+            if (localStorage.getItem('userId')) {
+                resetUserMarker();
+            }
+        };
+
         loadSpots();
         setInterval(loadSpots, 5000);
     </script>
