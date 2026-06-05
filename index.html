@@ -24,7 +24,10 @@ var map = L.map('map', {
     maxZoom: 20,
     minZoom: 3
 }).setView([39.6384, 22.4152], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CartoDB',
+    maxZoom: 20
+}).addTo(map);
 
         var markers = [];
         var userMarker = null;
