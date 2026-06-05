@@ -25,9 +25,11 @@ var map = L.map('map', {
     minZoom: 3
 }).setView([39.6384, 22.4152], 14);
         // Παράδειγμα για Dark mode χάρτη
-L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenMapTiles &copy; OpenStreetMap contributors'
+// Χρησιμοποιούμε τον CartoDB Positron για καθαρή εμφάνιση δρόμων
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
 }).addTo(map);
 
         var markers = [];
