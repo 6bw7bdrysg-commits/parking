@@ -18,13 +18,10 @@
         .btn-action { background-color: #28a745; color: white; }
         .nav-btn { background-color: #007bff; color: white; }
         .occupy-btn { background-color: #dc3545; color: white; }
-        .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <div class="scrolling-banner">
-        <span>⚠️ ΠΡΟΣΟΧΗ: Η διαθεσιμότητα των θέσεων δεν είναι εγγυημένη. Χρησιμοποίησε την εφαρμογή υπεύθυνα.</span>
-    </div>
+    <div class="scrolling-banner"><span>⚠️ ΠΡΟΣΟΧΗ: Η διαθεσιμότητα των θέσεων δεν είναι εγγυημένη. Χρησιμοποίησε την εφαρμογή υπεύθυνα.</span></div>
     <div id="loginOverlay">
         <h2>Καλώς ήρθες!</h2>
         <input type="text" id="usernameInput" placeholder="Δώσε ένα όνομα..." style="padding:10px; width:80%; margin-bottom:10px;">
@@ -37,7 +34,7 @@
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map').setView([39.6384, 22.4152], 16);
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }).addTo(map);
-        var markers = [], userMarker = null, lastClickedLatLng = null;
+        var markers = [], userMarker = null;
 
         if (localStorage.getItem('userId')) document.getElementById('loginOverlay').style.display = 'none';
 
@@ -51,40 +48,33 @@
             resetUserMarker();
         }
 
-        function getPopupHTML(isUser) {
-            return `<div style="text-align:center;"><b>Επιλογή θέσης</b><br>
-                    <input type="file" id="${isUser ? 'photoInput' : 'clickPhotoInput'}" accept="image/*" style="width:100%; margin:5px 0;">
-                    <button class="btn-action" onclick="submitPosition(${isUser}, true)">📢 Δημοσίευσε Τώρα</button>
-                    <button class="nav-btn" onclick="submitPosition(${isUser}, false)">💾 Αποθήκευση για μετά</button></div>`;
-        }
-
         function resetUserMarker() {
             navigator.geolocation.getCurrentPosition((pos) => {
                 const lat = pos.coords.latitude, lng = pos.coords.longitude;
                 if (userMarker) userMarker.setLatLng([lat, lng]);
-                else userMarker = L.marker([lat, lng], { draggable: true }).addTo(map).bindPopup(getPopupHTML(true)).openPopup();
+                else userMarker = L.marker([lat, lng], { draggable: true }).addTo(map).bindPopup("Είσαι εδώ!");
                 map.setView([lat, lng], 17);
             });
         }
 
         map.on('click', (e) => {
-            lastClickedLatLng = e.latlng;
-            L.popup().setLatLng(e.latlng).setContent(getPopupHTML(false)).openOn(map);
+            const { lat, lng } = e.latlng;
+            L.popup().setLatLng(e.latlng).setContent(`<div style="text-align:center;"><b>Θέση</b><br>
+                <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;">
+                <button class="btn-action" onclick="submitPosition(${lat}, ${lng}, true)">📢 Δημοσίευση</button>
+                <button class="nav-btn" onclick="submitPosition(${lat}, ${lng}, false)">💾 Αποθήκευση</button></div>`).openOn(map);
         });
 
-        async function submitPosition(isUser, isPublic) {
-            const file = document.getElementById(isUser ? 'photoInput' : 'clickPhotoInput').files[0];
-            const pos = isUser ? userMarker.getLatLng() : lastClickedLatLng;
-            
-            // Εδώ προσθέσαμε τον έλεγχο: Αν είναι δημόσια ρώτα, αλλιώς βάλε 0
+        async function submitPosition(lat, lng, isPublic) {
+            const file = document.getElementById('clickPhotoInput').files[0];
             let mins = isPublic ? prompt("Πόσα λεπτά;", "10") : 0;
             if (isPublic && !mins) return;
             
             if (file) {
                 const reader = new FileReader();
-                reader.onloadend = () => sendToServer(pos.lat, pos.lng, mins, reader.result, isPublic);
+                reader.onloadend = () => sendToServer(lat, lng, mins, reader.result, isPublic);
                 reader.readAsDataURL(file);
-            } else sendToServer(pos.lat, pos.lng, mins, null, isPublic);
+            } else sendToServer(lat, lng, mins, null, isPublic);
         }
 
         async function sendToServer(lat, lng, mins, photo, isPublic) {
