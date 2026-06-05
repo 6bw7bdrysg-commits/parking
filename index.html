@@ -19,7 +19,11 @@
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
-        var map = L.map('map').setView([39.6384, 22.4152], 14);
+        // Το maxZoom: 20 επιτρέπει πολύ μεγαλύτερο ζουμ από το προεπιλεγμένο
+var map = L.map('map', {
+    maxZoom: 20,
+    minZoom: 3
+}).setView([39.6384, 22.4152], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
 
         var markers = [];
