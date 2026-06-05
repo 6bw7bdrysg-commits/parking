@@ -49,62 +49,7 @@
         }
 
         function resetUserMarker() {
+            if (userMarker) map.removeLayer(userMarker);
             navigator.geolocation.getCurrentPosition((pos) => {
                 const lat = pos.coords.latitude, lng = pos.coords.longitude;
-                if (userMarker) userMarker.setLatLng([lat, lng]);
-                else userMarker = L.marker([lat, lng], { draggable: true }).addTo(map).bindPopup("Είσαι εδώ!");
-                map.setView([lat, lng], 17);
-            });
-        }
-
-        map.on('click', (e) => {
-            const { lat, lng } = e.latlng;
-            L.popup().setLatLng(e.latlng).setContent(`<div style="text-align:center;"><b>Θέση</b><br>
-                <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;">
-                <button class="btn-action" onclick="submitPosition(${lat}, ${lng}, true)">📢 Δημοσίευση</button>
-                <button class="nav-btn" onclick="submitPosition(${lat}, ${lng}, false)">💾 Αποθήκευση</button></div>`).openOn(map);
-        });
-
-        async function submitPosition(lat, lng, isPublic) {
-            const file = document.getElementById('clickPhotoInput').files[0];
-            let mins = isPublic ? prompt("Πόσα λεπτά;", "10") : 0;
-            if (isPublic && !mins) return;
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => sendToServer(lat, lng, mins, reader.result, isPublic);
-                reader.readAsDataURL(file);
-            } else sendToServer(lat, lng, mins, null, isPublic);
-        }
-
-        async function sendToServer(lat, lng, mins, photo, isPublic) {
-            await fetch(`${API_BASE_URL}/free-spot`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: parseInt(localStorage.getItem('userId')), latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo, is_public: isPublic })
-            });
-            map.closePopup();
-            loadSpots();
-        }
-
-        async function loadSpots() {
-            let res = await fetch(`${API_BASE_URL}/search-spots?user_id=${localStorage.getItem('userId') || 1}`);
-            let data = await res.json();
-            markers.forEach(m => map.removeLayer(m));
-            data.spots.forEach(spot => {
-                let color = spot.is_public ? 'green' : 'blue';
-                let marker = L.marker([spot.latitude, spot.longitude], {icon: new L.Icon({iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, iconSize:[25,41]})}).addTo(map)
-                    .bindPopup(`<b>${spot.is_public ? 'Δημόσια' : 'Ιδιωτική'}</b><br>${!spot.is_public ? `<button class="btn-action" onclick="publishSpot(${spot.id})">📢 Δημοσίευσε Τώρα</button>` : ''}`);
-                markers.push(marker);
-            });
-        }
-
-        async function publishSpot(id) {
-            await fetch(`${API_BASE_URL}/publish-spot/${id}`, { method: 'POST' });
-            loadSpots();
-        }
-
-        window.onload = () => { if (localStorage.getItem('userId')) resetUserMarker(); loadSpots(); setInterval(loadSpots, 5000); };
-    </script>
-</body>
-</html>
+                userMarker = L.
