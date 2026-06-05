@@ -89,17 +89,17 @@
             if (!localStorage.getItem('userId')) return;
             let res = await fetch(`${API_BASE_URL}/search-spots?user_id=${localStorage.getItem('userId')}`);
             let data = await res.json();
-            
-            // Καθαρισμός όλων των παλιών πινέζων από τον χάρτη
             markers.forEach(m => map.removeLayer(m));
             markers = []; 
-            
             data.spots.forEach(spot => {
                 let color = spot.is_public ? 'green' : 'violet';
-                let marker = L.marker([spot.latitude, spot.longitude], {icon: new L.Icon({iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, iconSize:[25,41]})}).addTo(map)
-                    .bindPopup(`<b>${spot.is_public ? 'Δημόσια' : 'Αποθήκευση'}</b><br>
-                    ${!spot.is_public ? `<button class="btn-action" onclick="publishSpot(${spot.id})">📢 Δημοσίευση</button>` : ''}
-                    <button class="occupy-btn" onclick="deleteSpot(${spot.id})">❌ Διαγραφή</button>`);
+                let marker = L.marker([spot.latitude, spot.longitude], {
+                    icon: new L.Icon({iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, iconSize:[25,41]}),
+                    draggable: false
+                }).addTo(map)
+                .bindPopup(`<b>${spot.is_public ? 'Δημόσια' : 'Αποθηκευμένη'}</b><br>
+                ${!spot.is_public ? `<button class="btn-action" onclick="publishSpot(${spot.id})">📢 Δημοσίευση</button>` : ''}
+                <button class="occupy-btn" onclick="deleteSpot(${spot.id})">❌ Διαγραφή</button>`);
                 markers.push(marker);
             });
         }
