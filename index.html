@@ -10,14 +10,18 @@
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100vh; width: 100vw; }
         
-        /* Κουμπί επαναφοράς θέσης */
+        /* Overlay Σύνδεσης */
+        #loginOverlay {
+            position:fixed; top:0; left:0; width:100%; height:100%; background:white; 
+            z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center;
+        }
+
         .my-location-btn {
             position: absolute; top: 10px; right: 10px; z-index: 1000;
             background: white; padding: 10px; border-radius: 5px;
             cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
         
-        /* Mobile-friendly buttons */
         .btn-action, .nav-btn, .occupy-btn { 
             border: none; padding: 12px; width: 100%; margin-top: 8px; 
             cursor: pointer; font-size: 16px; border-radius: 8px; font-weight: bold;
@@ -29,12 +33,38 @@
     </style>
 </head>
 <body>
+    <div id="loginOverlay">
+        <h2>Καλώς ήρθες!</h2>
+        <input type="text" id="usernameInput" placeholder="Δώσε ένα όνομα..." style="padding:10px; width:80%; margin-bottom:10px;">
+        <button class="btn-action" style="width:80%" onclick="login()">Σύνδεση</button>
+    </div>
+
     <div id="map"></div>
     <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         
+        // Έλεγχος σύνδεσης
+        if (!localStorage.getItem('userId')) {
+            document.getElementById('loginOverlay').style.display = 'flex';
+        } else {
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
+
+        async function login() {
+            const username = document.getElementById('usernameInput').value;
+            if (!username) return alert("Βάλε ένα όνομα!");
+
+            let res = await fetch(`${API_BASE_URL}/login?username=${username}`, { method: 'POST' });
+            let data = await res.json();
+            
+            localStorage.setItem('userId', data.user_id);
+            localStorage.setItem('username', data.username);
+            
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
+
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
         
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -101,10 +131,11 @@
         }
 
         async function sendToServer(lat, lng, mins, photo) {
+            const userId = localStorage.getItem('userId');
             await fetch(`${API_BASE_URL}/free-spot`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: 1, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo})
+                body: JSON.stringify({user_id: parseInt(userId), latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo})
             });
             map.closePopup();
             loadSpots();
@@ -113,39 +144,4 @@
         async function loadSpots() {
             let res = await fetch(`${API_BASE_URL}/search-spots?user_id=1`);
             let data = await res.json();
-            markers.forEach(m => map.removeLayer(m));
-            markers = [];
-            data.spots.forEach(spot => {
-                let created = new Date(spot.created_at + "Z");
-                let remaining = spot.minutes_until_free - Math.floor((new Date() - created) / 60000);
-                if (remaining > 0) {
-                    let color = remaining <= 3 ? 'red' : 'green';
-                    let icon = new L.Icon({
-                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                    });
-                    let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
-                    let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`
-                            ${photoHtml}
-                            <b>Λήγει σε: ${remaining} λεπτά</b><br>
-                            <button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες</button>
-                            <button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>
-                        `);
-                    markers.push(marker);
-                }
-            });
-        }
-
-        async function occupySpot(id) {
-            await fetch(`${API_BASE_URL}/occupy-spot/${id}`, { method: 'DELETE' });
-            loadSpots();
-        }
-
-        autoLocate();
-        loadSpots();
-        setInterval(loadSpots, 5000);
-    </script>
-</body>
-</html>
+            markers
