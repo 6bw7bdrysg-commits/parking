@@ -18,7 +18,7 @@
     <div id="map"></div>
     
     <script>
-        const API_BASE_URL = "https://georgeliask.pythonanywhere.com";
+        const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map').setView([39.6384, 22.4152], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
 
@@ -67,7 +67,7 @@
 
         // Συνάρτηση για πλοήγηση
         function getDirections(lat, lng) {
-            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`, '_blank');
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
         }
 
         async function sendToServer(lat, lng, mins, photo) {
