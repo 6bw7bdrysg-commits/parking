@@ -24,7 +24,7 @@ app.add_middleware(
 
 # Σωστό path για το index.html στο Render
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INDEX_FILE = os.path.join(BASE_DIR, "index.html")
+INDEX_FILE = os.path.join(BASE_DIR, "parking", "index.html")
 
 @app.on_event("startup")
 def startup_event():
