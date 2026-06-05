@@ -20,7 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Εφόσον το βρήκαμε στη ρίζα, ορίζουμε το path έτσι:
 INDEX_FILE = "/opt/render/project/src/index.html"
 
 @app.on_event("startup")
@@ -38,16 +37,18 @@ class ParkingSpotCreate(BaseModel):
     minutes_until_free: int
     photo: Optional[str] = None
 
+class LoginRequest(BaseModel):
+    username: str
+
 @app.get("/")
 def read_root():
     return FileResponse(INDEX_FILE)
 
-# Νέο endpoint για Login/Εγγραφή
 @app.post("/login")
-def login(username: str, db: Session = Depends(get_db)):
-    user = db.query(models.DBUser).filter(models.DBUser.username == username).first()
+def login(req: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(models.DBUser).filter(models.DBUser.username == req.username).first()
     if not user:
-        user = models.DBUser(username=username, is_pro=False)
+        user = models.DBUser(username=req.username, is_pro=False)
         db.add(user)
         db.commit()
         db.refresh(user)
