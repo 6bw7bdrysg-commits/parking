@@ -42,7 +42,17 @@ class ParkingSpotCreate(BaseModel):
 def read_root():
     return FileResponse(INDEX_FILE)
 
-# Τα υπόλοιπα endpoints σου παραμένουν ίδια...
+# Νέο endpoint για Login/Εγγραφή
+@app.post("/login")
+def login(username: str, db: Session = Depends(get_db)):
+    user = db.query(models.DBUser).filter(models.DBUser.username == username).first()
+    if not user:
+        user = models.DBUser(username=username, is_pro=False)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    return {"user_id": user.id, "username": user.username}
+
 @app.post("/free-spot")
 def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db)):
     new_spot = models.DBParkingSpot(
