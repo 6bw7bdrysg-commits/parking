@@ -8,12 +8,10 @@ from typing import Optional
 from database import engine, get_db, SessionLocal
 import models
 
-# Δημιουργία πινάκων στη βάση
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Επιτρέπουμε όλες τις προσπελάσεις για το frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,8 +20,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INDEX_FILE = os.path.join(BASE_DIR, "index.html")
+# Εφόσον το βρήκαμε στη ρίζα, ορίζουμε το path έτσι:
+INDEX_FILE = "/opt/render/project/src/index.html"
 
 @app.on_event("startup")
 def startup_event():
@@ -42,18 +40,9 @@ class ParkingSpotCreate(BaseModel):
 
 @app.get("/")
 def read_root():
-    all_files = []
-    # Ψάχνουμε σε όλα τα υποκαταστήματα του φακέλου
-    for root, dirs, files in os.walk("/opt/render/project/src/"):
-        for file in files:
-            if "index.html" in file:
-                all_files.append(os.path.join(root, file))
-    
-    return {
-        "message": "Αναζήτηση ολοκληρώθηκε",
-        "files_found": all_files
-    }
+    return FileResponse(INDEX_FILE)
 
+# Τα υπόλοιπα endpoints σου παραμένουν ίδια...
 @app.post("/free-spot")
 def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db)):
     new_spot = models.DBParkingSpot(
