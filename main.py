@@ -42,7 +42,6 @@ class ParkingSpotCreate(BaseModel):
 def read_root():
     return FileResponse(INDEX_FILE)
 
-# Τα υπόλοιπα endpoints σου παραμένουν ίδια...
 @app.post("/free-spot")
 def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db)):
     new_spot = models.DBParkingSpot(
