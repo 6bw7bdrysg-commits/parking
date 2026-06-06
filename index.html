@@ -9,15 +9,15 @@
     <style>
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100vh; width: 100vw; }
-        #loginOverlay {
-            position:fixed; top:0; left:0; width:100%; height:100%; background:white; 
-            z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center;
-        }
+        
+        /* Κουμπί επαναφοράς θέσης */
         .my-location-btn {
             position: absolute; top: 10px; right: 10px; z-index: 1000;
             background: white; padding: 10px; border-radius: 5px;
             cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
+        
+        /* Mobile-friendly buttons */
         .btn-action, .nav-btn, .occupy-btn { 
             border: none; padding: 12px; width: 100%; margin-top: 8px; 
             cursor: pointer; font-size: 16px; border-radius: 8px; font-weight: bold;
@@ -29,42 +29,19 @@
     </style>
 </head>
 <body>
-    <div id="loginOverlay">
-        <h2>Καλώς ήρθες!</h2>
-        <input type="text" id="usernameInput" placeholder="Δώσε ένα όνομα..." style="padding:10px; width:80%; margin-bottom:10px;">
-        <button type="button" class="btn-action" style="width:80%" onclick="login()">Σύνδεση</button>
-    </div>
     <div id="map"></div>
     <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         
-        if (localStorage.getItem('userId')) {
-            document.getElementById('loginOverlay').style.display = 'none';
-        }
-
-        async function login() {
-            const username = document.getElementById('usernameInput').value;
-            if (!username) return alert("Βάλε ένα όνομα!");
-            try {
-                let res = await fetch(`${API_BASE_URL}/login`, { 
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username: username })
-                });
-                let data = await res.json();
-                localStorage.setItem('userId', data.user_id);
-                localStorage.setItem('username', data.username);
-                document.getElementById('loginOverlay').style.display = 'none';
-                resetUserMarker();
-            } catch (e) { alert("Αποτυχία σύνδεσης."); }
-        }
-
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
+        
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles © Esri', maxZoom: 19
+            attribution: 'Tiles © Esri',
+            maxZoom: 19
         }).addTo(map);
+
         window.addEventListener('resize', () => map.invalidateSize());
 
         var markers = [];
@@ -75,21 +52,31 @@
                 navigator.geolocation.getCurrentPosition((pos) => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
+                    
                     if (userMarker) {
                         userMarker.setLatLng([lat, lng]);
                     } else {
                         userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
-                            .bindPopup(`<div style="text-align:center;"><b>Είσαι εδώ!</b><br><input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>`).openPopup();
+                            .bindPopup(`
+                                <div style="text-align:center;"><b>Είσαι εδώ!</b><br>
+                                <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
+                                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>
+                            `).openPopup();
                     }
                     map.setView([lat, lng], 17);
                 }, null, { enableHighAccuracy: true });
             }
         }
 
+        function autoLocate() {
+            resetUserMarker();
+        }
+
         function submitPosition(isUserMarker) {
             const file = document.getElementById(isUserMarker ? 'photoInput' : 'clickPhotoInput').files[0];
             const pos = isUserMarker ? userMarker.getLatLng() : lastClickedLatLng;
             let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
+            
             if (mins) {
                 if (file) {
                     const reader = new FileReader();
@@ -102,7 +89,11 @@
         var lastClickedLatLng = null;
         map.on('click', function(e) {
             lastClickedLatLng = e.latlng;
-            L.popup().setLatLng(e.latlng).setContent(`<div style="text-align:center;"><b>Νέα θέση</b><br><input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>`).openOn(map);
+            L.popup().setLatLng(e.latlng).setContent(`
+                <div style="text-align:center;"><b>Νέα θέση</b><br>
+                <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;">
+                <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>
+            `).openOn(map);
         });
 
         function getDirections(lat, lng) {
@@ -110,11 +101,10 @@
         }
 
         async function sendToServer(lat, lng, mins, photo) {
-            const userId = localStorage.getItem('userId');
             await fetch(`${API_BASE_URL}/free-spot`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: parseInt(userId), latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo})
+                body: JSON.stringify({user_id: 1, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo})
             });
             map.closePopup();
             loadSpots();
@@ -137,7 +127,12 @@
                     });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
+                        .bindPopup(`
+                            ${photoHtml}
+                            <b>Λήγει σε: ${remaining} λεπτά</b><br>
+                            <button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες</button>
+                            <button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>
+                        `);
                     markers.push(marker);
                 }
             });
@@ -148,12 +143,7 @@
             loadSpots();
         }
 
-        window.onload = () => {
-            if (localStorage.getItem('userId')) {
-                resetUserMarker();
-            }
-        };
-
+        autoLocate();
         loadSpots();
         setInterval(loadSpots, 5000);
     </script>
