@@ -2,103 +2,160 @@
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Koinon Parking</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100vh; width: 100vw; }
-        #loginOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-        .my-location-btn { position: absolute; top: 50px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-action { background-color: #28a745; color: white; border: none; padding: 10px; width: 100%; margin-top: 5px; cursor: pointer; border-radius: 8px; }
-        .nav-btn { background-color: #007bff; color: white; border: none; padding: 10px; width: 100%; margin-top: 5px; cursor: pointer; border-radius: 8px; }
-        .occupy-btn { background-color: #dc3545; color: white; border: none; padding: 10px; width: 100%; margin-top: 5px; cursor: pointer; border-radius: 8px; }
+        #loginOverlay {
+            position:fixed; top:0; left:0; width:100%; height:100%; background:white; 
+            z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center;
+        }
+        .my-location-btn {
+            position: absolute; top: 10px; right: 10px; z-index: 1000;
+            background: white; padding: 10px; border-radius: 5px;
+            cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .btn-action, .nav-btn, .occupy-btn { 
+            border: none; padding: 12px; width: 100%; margin-top: 8px; 
+            cursor: pointer; font-size: 16px; border-radius: 8px; font-weight: bold;
+        }
+        .btn-action { background-color: #28a745; color: white; }
+        .nav-btn { background-color: #007bff; color: white; }
+        .occupy-btn { background-color: #dc3545; color: white; }
+        .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
     </style>
 </head>
 <body>
     <div id="loginOverlay">
         <h2>Καλώς ήρθες!</h2>
         <input type="text" id="usernameInput" placeholder="Δώσε ένα όνομα..." style="padding:10px; width:80%; margin-bottom:10px;">
-        <button class="btn-action" style="width:80%" onclick="login()">Σύνδεση</button>
+        <button type="button" class="btn-action" style="width:80%" onclick="login()">Σύνδεση</button>
     </div>
     <div id="map"></div>
     <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
-        var map = L.map('map').setView([39.6384, 22.4152], 16);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-        var markers = [], userMarker = null;
+        
+        if (localStorage.getItem('userId')) {
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
 
         async function login() {
             const username = document.getElementById('usernameInput').value;
             if (!username) return alert("Βάλε ένα όνομα!");
-            let res = await fetch(`${API_BASE_URL}/login`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username }) });
-            let data = await res.json();
-            localStorage.setItem('userId', data.user_id);
-            document.getElementById('loginOverlay').style.display = 'none';
-            resetUserMarker();
-            loadSpots();
+            try {
+                let res = await fetch(`${API_BASE_URL}/login`, { 
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: username })
+                });
+                let data = await res.json();
+                localStorage.setItem('userId', data.user_id);
+                localStorage.setItem('username', data.username);
+                document.getElementById('loginOverlay').style.display = 'none';
+                resetUserMarker();
+            } catch (e) { alert("Αποτυχία σύνδεσης."); }
         }
+
+        var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles © Esri', maxZoom: 19
+        }).addTo(map);
+        window.addEventListener('resize', () => map.invalidateSize());
+
+        var markers = [];
+        var userMarker = null;
 
         function resetUserMarker() {
-            navigator.geolocation.getCurrentPosition((pos) => {
-                const lat = pos.coords.latitude, lng = pos.coords.longitude;
-                if (userMarker) {
-                    userMarker.setLatLng([lat, lng]);
-                } else {
-                    // Η πινέζα σου έχει ΜΟΝΟ επιλογές αποθήκευσης/δημοσίευσης
-                    userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
-                        .bindPopup(`<b>Εδώ είμαι!</b><br>
-                            <button class="btn-action" onclick="saveSpot(true, ${lat}, ${lng})">📢 Δημοσίευση</button>
-                            <button class="nav-btn" onclick="saveSpot(false, ${lat}, ${lng})">💾 Αποθήκευση</button>`);
-                }
-                map.setView([lat, lng], 17);
-            });
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    if (userMarker) {
+                        userMarker.setLatLng([lat, lng]);
+                    } else {
+                        userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
+                            .bindPopup(`<div style="text-align:center;"><b>Είσαι εδώ!</b><br><input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>`).openPopup();
+                    }
+                    map.setView([lat, lng], 17);
+                }, null, { enableHighAccuracy: true });
+            }
         }
 
-        async function saveSpot(isPublic, lat, lng) {
-            let pos = userMarker.getLatLng();
-            let mins = isPublic ? prompt("Λεπτά;", "10") : 0;
+        function submitPosition(isUserMarker) {
+            const file = document.getElementById(isUserMarker ? 'photoInput' : 'clickPhotoInput').files[0];
+            const pos = isUserMarker ? userMarker.getLatLng() : lastClickedLatLng;
+            let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
+            if (mins) {
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => sendToServer(pos.lat, pos.lng, mins, reader.result);
+                    reader.readAsDataURL(file);
+                } else { sendToServer(pos.lat, pos.lng, mins, null); }
+            }
+        }
+
+        var lastClickedLatLng = null;
+        map.on('click', function(e) {
+            lastClickedLatLng = e.latlng;
+            L.popup().setLatLng(e.latlng).setContent(`<div style="text-align:center;"><b>Νέα θέση</b><br><input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>`).openOn(map);
+        });
+
+        function getDirections(lat, lng) {
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+        }
+
+        async function sendToServer(lat, lng, mins, photo) {
+            const userId = localStorage.getItem('userId');
             await fetch(`${API_BASE_URL}/free-spot`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: parseInt(localStorage.getItem('userId')), latitude: pos.lat, longitude: pos.lng, minutes_until_free: parseInt(mins), is_public: isPublic })
+                body: JSON.stringify({user_id: parseInt(userId), latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo})
             });
+            map.closePopup();
             loadSpots();
         }
 
         async function loadSpots() {
-            if (!localStorage.getItem('userId')) return;
-            let res = await fetch(`${API_BASE_URL}/search-spots?user_id=${localStorage.getItem('userId')}`);
+            let res = await fetch(`${API_BASE_URL}/search-spots?user_id=1`);
             let data = await res.json();
             markers.forEach(m => map.removeLayer(m));
-            markers = []; 
+            markers = [];
             data.spots.forEach(spot => {
-                let color = spot.is_public ? 'green' : 'violet';
-                let marker = L.marker([spot.latitude, spot.longitude], {
-                    icon: new L.Icon({iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, iconSize:[25,41]}),
-                    draggable: false // ΜΟΝΙΜΗ - ΔΕΝ ΚΟΥΝΙΕΤΑΙ
-                }).addTo(map)
-                .bindPopup(`<b>${spot.is_public ? 'Δημόσια' : 'Αποθηκευμένη'}</b><br>
-                ${!spot.is_public ? `<button class="btn-action" onclick="publishSpot(${spot.id})">📢 Δημοσίευση</button>` : ''}
-                <button class="occupy-btn" onclick="deleteSpot(${spot.id})">❌ Διαγραφή</button>`);
-                markers.push(marker);
+                let created = new Date(spot.created_at + "Z");
+                let remaining = spot.minutes_until_free - Math.floor((new Date() - created) / 60000);
+                if (remaining > 0) {
+                    let color = remaining <= 3 ? 'red' : 'green';
+                    let icon = new L.Icon({
+                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                    });
+                    let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
+                    let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
+                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
+                    markers.push(marker);
+                }
             });
         }
 
-        async function publishSpot(id) {
-            await fetch(`${API_BASE_URL}/publish-spot/${id}`, { method: 'POST' });
-            loadSpots();
-        }
-        
-        async function deleteSpot(id) {
+        async function occupySpot(id) {
             await fetch(`${API_BASE_URL}/occupy-spot/${id}`, { method: 'DELETE' });
             loadSpots();
         }
 
-        window.onload = () => { if (localStorage.getItem('userId')) { resetUserMarker(); loadSpots(); } };
+        window.onload = () => {
+            if (localStorage.getItem('userId')) {
+                resetUserMarker();
+            }
+        };
+
+        loadSpots();
+        setInterval(loadSpots, 5000);
     </script>
 </body>
 </html>
