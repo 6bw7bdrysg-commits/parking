@@ -76,9 +76,9 @@
                     if (userMarker) {
                         userMarker.setLatLng([lat, lng]);
                     } else {
-                        userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
-                            .bindPopup(getUserPopupContent()).openPopup();
+                        userMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
                     }
+                    userMarker.bindPopup(getUserPopupContent()).openPopup();
                     map.setView([lat, lng], 17);
                 }, null, { enableHighAccuracy: true });
             }
@@ -99,7 +99,7 @@
         function saveCurrentLocation() {
             savedPosition = userMarker.getLatLng();
             alert("Η θέση αποθηκεύτηκε!");
-            userMarker.setPopupContent(getUserPopupContent());
+            userMarker.setPopupContent(getUserPopupContent()).openPopup();
         }
 
         function publishSaved() {
@@ -112,31 +112,4 @@
             }
         }
 
-        function autoLocate() { resetUserMarker(); }
-
-        function submitPosition(isUserMarker) {
-            const file = document.getElementById(isUserMarker ? 'photoInput' : 'clickPhotoInput').files[0];
-            const pos = isUserMarker ? userMarker.getLatLng() : lastClickedLatLng;
-            let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
-            
-            if (mins) {
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => sendToServer(pos.lat, pos.lng, mins, reader.result);
-                    reader.readAsDataURL(file);
-                } else { sendToServer(pos.lat, pos.lng, mins, null); }
-            }
-        }
-
-        var lastClickedLatLng = null;
-        map.on('click', function(e) {
-            lastClickedLatLng = e.latlng;
-            L.popup().setLatLng(e.latlng).setContent(`
-                <div style="text-align:center;"><b>Νέα θέση</b><br>
-                <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;">
-                <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>
-            `).openOn(map);
-        });
-
-        function getDirections(lat, lng) {
-            window.open(`http
+        function submitPosition(isUserMarker
