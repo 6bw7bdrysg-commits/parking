@@ -10,7 +10,6 @@
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100vh; width: 100vw; }
         
-        /* Κυλιόμενο Banner */
         .marquee-container {
             position: absolute; top: 0; left: 0; width: 100%;
             background: rgba(0, 0, 0, 0.8); color: white;
@@ -26,20 +25,20 @@
             100% { transform: translate(-100%, 0); }
         }
         
-        /* Κουμπί επαναφοράς θέσης */
         .my-location-btn {
             position: absolute; top: 60px; right: 10px; z-index: 1000;
             background: white; padding: 10px; border-radius: 5px;
             cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
         
-        .btn-action, .nav-btn, .occupy-btn { 
+        .btn-action, .nav-btn, .occupy-btn, .save-btn { 
             border: none; padding: 12px; width: 100%; margin-top: 8px; 
             cursor: pointer; font-size: 16px; border-radius: 8px; font-weight: bold;
         }
         .btn-action { background-color: #28a745; color: white; }
         .nav-btn { background-color: #007bff; color: white; }
         .occupy-btn { background-color: #dc3545; color: white; }
+        .save-btn { background-color: #ffc107; color: black; }
         .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
     </style>
 </head>
@@ -55,8 +54,8 @@
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
-        
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
+        var savedPosition = null;
         
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles © Esri',
@@ -78,20 +77,42 @@
                         userMarker.setLatLng([lat, lng]);
                     } else {
                         userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
-                            .bindPopup(`
-                                <div style="text-align:center;"><b>Είσαι εδώ!</b><br>
-                                <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
-                                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>
-                            `).openPopup();
+                            .bindPopup(getUserPopupContent()).openPopup();
                     }
                     map.setView([lat, lng], 17);
                 }, null, { enableHighAccuracy: true });
             }
         }
 
-        function autoLocate() {
-            resetUserMarker();
+        function getUserPopupContent() {
+            let html = `<div style="text-align:center;"><b>Είσαι εδώ!</b><br>
+                <button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση θέσης</button>
+                <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
+                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε Τώρα</button>`;
+            if (savedPosition) {
+                html += `<button class="btn-action" style="background:#6c757d;" onclick="publishSaved()">📤 Δημοσίευσε την αποθηκευμένη</button>`;
+            }
+            html += `</div>`;
+            return html;
         }
+
+        function saveCurrentLocation() {
+            savedPosition = userMarker.getLatLng();
+            alert("Η θέση αποθηκεύτηκε!");
+            userMarker.setPopupContent(getUserPopupContent());
+        }
+
+        function publishSaved() {
+            if (savedPosition) {
+                let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
+                if (mins) {
+                    sendToServer(savedPosition.lat, savedPosition.lng, mins, null);
+                    savedPosition = null;
+                }
+            }
+        }
+
+        function autoLocate() { resetUserMarker(); }
 
         function submitPosition(isUserMarker) {
             const file = document.getElementById(isUserMarker ? 'photoInput' : 'clickPhotoInput').files[0];
@@ -118,55 +139,4 @@
         });
 
         function getDirections(lat, lng) {
-            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-        }
-
-        async function sendToServer(lat, lng, mins, photo) {
-            await fetch(`${API_BASE_URL}/free-spot`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: 1, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo})
-            });
-            map.closePopup();
-            loadSpots();
-        }
-
-        async function loadSpots() {
-            let res = await fetch(`${API_BASE_URL}/search-spots?user_id=1`);
-            let data = await res.json();
-            markers.forEach(m => map.removeLayer(m));
-            markers = [];
-            data.spots.forEach(spot => {
-                let created = new Date(spot.created_at + "Z");
-                let remaining = spot.minutes_until_free - Math.floor((new Date() - created) / 60000);
-                if (remaining > 0) {
-                    let color = remaining <= 3 ? 'red' : 'green';
-                    let icon = new L.Icon({
-                        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                    });
-                    let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
-                    let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`
-                            ${photoHtml}
-                            <b>Λήγει σε: ${remaining} λεπτά</b><br>
-                            <button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες</button>
-                            <button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>
-                        `);
-                    markers.push(marker);
-                }
-            });
-        }
-
-        async function occupySpot(id) {
-            await fetch(`${API_BASE_URL}/occupy-spot/${id}`, { method: 'DELETE' });
-            loadSpots();
-        }
-
-        autoLocate();
-        loadSpots();
-        setInterval(loadSpots, 5000);
-    </script>
-</body>
-</html>
+            window.open(`http
