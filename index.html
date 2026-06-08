@@ -4,7 +4,7 @@
         var savedPosition = null;
         var markers = [];
         var userMarker = null;
-        var savedMarker = null; // Νέα μεταβλητή για την μόνιμη πινέζα
+        var savedMarker = null; // Νέα μεταβλητή για την αποθηκευμένη πινέζα
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles © Esri',
@@ -18,11 +18,11 @@
             const lng = localStorage.getItem('savedLng');
             if (lat && lng) {
                 savedPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
-                showSavedMarker(); // Εμφάνιση της πινέζας αν υπάρχει αποθηκευμένη θέση
+                showSavedMarker(); // Εμφάνιση της πινέζας αν υπάρχει αποθηκευμένη
             }
         }
 
-        // Συνάρτηση για να σχεδιάζει την μπλε πινέζα της αποθηκευμένης θέσης
+        // Συνάρτηση για την εμφάνιση της αποθηκευμένης πινέζας
         function showSavedMarker() {
             if (savedPosition) {
                 if (savedMarker) map.removeLayer(savedMarker);
@@ -70,7 +70,7 @@
             localStorage.setItem('savedLat', pos.lat);
             localStorage.setItem('savedLng', pos.lng);
             savedPosition = pos;
-            showSavedMarker(); // Εμφάνιση πινέζας
+            showSavedMarker(); // Εμφάνιση της πινέζας στον χάρτη
             alert("Η θέση αποθηκεύτηκε μόνιμα!");
             userMarker.setPopupContent(getUserPopupContent()).openPopup();
         }
@@ -155,6 +155,7 @@
             loadSpots();
         }
 
+        // Εκκίνηση
         loadSavedPosition();
         resetUserMarker();
         loadSpots();
