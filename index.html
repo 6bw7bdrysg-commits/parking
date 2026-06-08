@@ -56,7 +56,10 @@
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
         var savedPosition = null;
-        
+        var markers = [];
+        var userMarker = null;
+        var savedMarker = null; // Μεταβλητή για την πινέζα
+
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles © Esri',
             maxZoom: 19
@@ -64,10 +67,20 @@
 
         window.addEventListener('resize', () => map.invalidateSize());
 
-        var markers = [];
-        var userMarker = null;
+        // Συνάρτηση για εμφάνιση πινέζας
+        function showSavedMarker() {
+            if (savedPosition) {
+                if (savedMarker) map.removeLayer(savedMarker);
+                savedMarker = L.marker([savedPosition.lat, savedPosition.lng], {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41]
+                    })
+                }).addTo(map).bindPopup("<b>Αποθηκευμένη θέση</b>");
+            }
+        }
 
-        // Φόρτωση αποθηκευμένης θέσης από τον browser
         function loadSavedPosition() {
             const lat = localStorage.getItem('savedLat');
             const lng = localStorage.getItem('savedLng');
@@ -110,6 +123,7 @@
             localStorage.setItem('savedLat', pos.lat);
             localStorage.setItem('savedLng', pos.lng);
             savedPosition = pos;
+            showSavedMarker();
             alert("Η θέση αποθηκεύτηκε μόνιμα!");
             userMarker.setPopupContent(getUserPopupContent()).openPopup();
         }
@@ -121,6 +135,7 @@
                     sendToServer(savedPosition.lat, savedPosition.lng, mins, null);
                     localStorage.removeItem('savedLat');
                     localStorage.removeItem('savedLng');
+                    if (savedMarker) map.removeLayer(savedMarker);
                     savedPosition = null;
                     userMarker.setPopupContent(getUserPopupContent()).openPopup();
                 }
@@ -175,7 +190,7 @@
                 let remaining = spot.minutes_until_free - Math.floor((new Date() - created) / 60000);
                 if (remaining > 0) {
                     let color = remaining <= 3 ? 'red' : 'green';
-                    let icon = new L.Icon({
+                    let icon = L.icon({
                         iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
                         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                         iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
