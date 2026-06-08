@@ -1,62 +1,11 @@
-<!DOCTYPE html>
-<html lang="el">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Koinon Parking</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
-        #map { height: 100vh; width: 100vw; }
-        
-        .marquee-container {
-            position: absolute; top: 0; left: 0; width: 100%;
-            background: rgba(0, 0, 0, 0.8); color: white;
-            padding: 10px 0; overflow: hidden; z-index: 2000;
-            white-space: nowrap; pointer-events: none;
-        }
-        .marquee-text {
-            display: inline-block; padding-left: 100%;
-            animation: marquee 15s linear infinite;
-        }
-        @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
-        
-        .my-location-btn {
-            position: absolute; top: 60px; right: 10px; z-index: 1000;
-            background: white; padding: 10px; border-radius: 5px;
-            cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        
-        .btn-action, .nav-btn, .occupy-btn, .save-btn { 
-            border: none; padding: 12px; width: 100%; margin-top: 8px; 
-            cursor: pointer; font-size: 16px; border-radius: 8px; font-weight: bold;
-        }
-        .btn-action { background-color: #28a745; color: white; }
-        .nav-btn { background-color: #007bff; color: white; }
-        .occupy-btn { background-color: #dc3545; color: white; }
-        .save-btn { background-color: #ffc107; color: black; }
-        .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
-    </style>
-</head>
-<body>
-    <div class="marquee-container">
-        <div class="marquee-text">
-            ⚠️ Προσοχή: Η διαθεσιμότητα των θέσεων δεν είναι εγγυημένη 100%! | Δημοσιεύστε μια θέση που αδειάζει | Βοηθήστε την κοινότητα!
-        </div>
-    </div>
-
-    <div id="map"></div>
-    <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
-    
-    <script>
+<script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
         var savedPosition = null;
-        
+        var markers = [];
+        var userMarker = null;
+        var savedMarker = null; // Νέα μεταβλητή για την μόνιμη πινέζα
+
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles © Esri',
             maxZoom: 19
@@ -64,15 +13,26 @@
 
         window.addEventListener('resize', () => map.invalidateSize());
 
-        var markers = [];
-        var userMarker = null;
-
-        // Φόρτωση αποθηκευμένης θέσης από τον browser
         function loadSavedPosition() {
             const lat = localStorage.getItem('savedLat');
             const lng = localStorage.getItem('savedLng');
             if (lat && lng) {
                 savedPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
+                showSavedMarker(); // Εμφάνιση της πινέζας αν υπάρχει αποθηκευμένη θέση
+            }
+        }
+
+        // Συνάρτηση για να σχεδιάζει την μπλε πινέζα της αποθηκευμένης θέσης
+        function showSavedMarker() {
+            if (savedPosition) {
+                if (savedMarker) map.removeLayer(savedMarker);
+                savedMarker = L.marker([savedPosition.lat, savedPosition.lng], {
+                    icon: new L.Icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41]
+                    })
+                }).addTo(map).bindPopup("<b>Αποθηκευμένη θέση</b>");
             }
         }
 
@@ -110,6 +70,7 @@
             localStorage.setItem('savedLat', pos.lat);
             localStorage.setItem('savedLng', pos.lng);
             savedPosition = pos;
+            showSavedMarker(); // Εμφάνιση πινέζας
             alert("Η θέση αποθηκεύτηκε μόνιμα!");
             userMarker.setPopupContent(getUserPopupContent()).openPopup();
         }
@@ -121,6 +82,7 @@
                     sendToServer(savedPosition.lat, savedPosition.lng, mins, null);
                     localStorage.removeItem('savedLat');
                     localStorage.removeItem('savedLng');
+                    if (savedMarker) map.removeLayer(savedMarker); // Αφαίρεση πινέζας
                     savedPosition = null;
                     userMarker.setPopupContent(getUserPopupContent()).openPopup();
                 }
@@ -193,11 +155,8 @@
             loadSpots();
         }
 
-        // Εκκίνηση
         loadSavedPosition();
         resetUserMarker();
         loadSpots();
         setInterval(loadSpots, 5000);
     </script>
-</body>
-</html>
