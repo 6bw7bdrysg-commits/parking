@@ -58,7 +58,7 @@
         var savedPosition = null;
         var markers = [];
         var userMarker = null;
-        var savedMarker = null; // Μεταβλητή για την πινέζα
+        var savedMarker = null;
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles © Esri',
@@ -67,18 +67,51 @@
 
         window.addEventListener('resize', () => map.invalidateSize());
 
-        // Συνάρτηση για εμφάνιση πινέζας
         function showSavedMarker() {
             if (savedPosition) {
                 if (savedMarker) map.removeLayer(savedMarker);
+                let popupContent = `
+                    <div style="text-align:center;">
+                        <b>Αποθηκευμένη θέση</b><br>
+                        <input type="file" id="savedPhotoInput" accept="image/*" style="width:100%; margin:5px 0;">
+                        <button class="btn-action" onclick="submitSavedWithPhoto()">📢 Δημοσίευσε Τώρα</button>
+                        <button class="occupy-btn" onclick="deleteSavedMarker()">🗑️ Διαγραφή</button>
+                    </div>`;
                 savedMarker = L.marker([savedPosition.lat, savedPosition.lng], {
                     icon: L.icon({
                         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
                         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                         iconSize: [25, 41], iconAnchor: [12, 41]
                     })
-                }).addTo(map).bindPopup("<b>Αποθηκευμένη θέση</b>");
+                }).addTo(map).bindPopup(popupContent);
             }
+        }
+
+        function submitSavedWithPhoto() {
+            const file = document.getElementById('savedPhotoInput').files[0];
+            let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
+            if (mins) {
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        sendToServer(savedPosition.lat, savedPosition.lng, mins, reader.result);
+                        deleteSavedMarker();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    sendToServer(savedPosition.lat, savedPosition.lng, mins, null);
+                    deleteSavedMarker();
+                }
+            }
+        }
+
+        function deleteSavedMarker() {
+            localStorage.removeItem('savedLat');
+            localStorage.removeItem('savedLng');
+            if (savedMarker) map.removeLayer(savedMarker);
+            savedMarker = null;
+            savedPosition = null;
+            map.closePopup();
         }
 
         function loadSavedPosition() {
@@ -94,7 +127,6 @@
                 navigator.geolocation.getCurrentPosition((pos) => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
-                    
                     if (userMarker) {
                         userMarker.setLatLng([lat, lng]);
                     } else {
@@ -110,11 +142,7 @@
             let html = `<div style="text-align:center;"><b>Είσαι εδώ!</b><br>
                 <button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση θέσης</button>
                 <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
-                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε Τώρα</button>`;
-            if (savedPosition) {
-                html += `<button class="btn-action" style="background:#6c757d;" onclick="publishSaved()">📤 Δημοσίευσε την αποθηκευμένη</button>`;
-            }
-            html += `</div>`;
+                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε Τώρα</button></div>`;
             return html;
         }
 
@@ -124,29 +152,14 @@
             localStorage.setItem('savedLng', pos.lng);
             savedPosition = pos;
             showSavedMarker();
-            alert("Η θέση αποθηκεύτηκε μόνιμα!");
-            userMarker.setPopupContent(getUserPopupContent()).openPopup();
-        }
-
-        function publishSaved() {
-            if (savedPosition) {
-                let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
-                if (mins) {
-                    sendToServer(savedPosition.lat, savedPosition.lng, mins, null);
-                    localStorage.removeItem('savedLat');
-                    localStorage.removeItem('savedLng');
-                    if (savedMarker) map.removeLayer(savedMarker);
-                    savedPosition = null;
-                    userMarker.setPopupContent(getUserPopupContent()).openPopup();
-                }
-            }
+            alert("Η θέση αποθηκεύτηκε!");
+            userMarker.closePopup();
         }
 
         function submitPosition(isUserMarker) {
             const file = document.getElementById(isUserMarker ? 'photoInput' : 'clickPhotoInput').files[0];
             const pos = isUserMarker ? userMarker.getLatLng() : lastClickedLatLng;
             let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
-            
             if (mins) {
                 if (file) {
                     const reader = new FileReader();
@@ -165,10 +178,6 @@
                 <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>
             `).openOn(map);
         });
-
-        function getDirections(lat, lng) {
-            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-        }
 
         async function sendToServer(lat, lng, mins, photo) {
             await fetch(`${API_BASE_URL}/free-spot`, {
@@ -197,7 +206,7 @@
                     });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
+                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
                     markers.push(marker);
                 }
             });
@@ -208,7 +217,6 @@
             loadSpots();
         }
 
-        // Εκκίνηση
         loadSavedPosition();
         showSavedMarker();
         resetUserMarker();
