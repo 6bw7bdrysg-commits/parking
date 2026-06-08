@@ -132,10 +132,6 @@
                     } else {
                         userMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
                     }
-                    
-                    // ΑΥΤΗ ΕΙΝΑΙ Η ΜΟΝΑΔΙΚΗ ΑΛΛΑΓΗ ΠΟΥ ΧΡΕΙΑΖΕΣΑΙ:
-                    userMarker.bringToFront(); 
-                    
                     userMarker.bindPopup(getUserPopupContent()).openPopup();
                     map.setView([lat, lng], 17);
                 }, null, { enableHighAccuracy: true });
