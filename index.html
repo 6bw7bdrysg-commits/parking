@@ -87,42 +87,6 @@
             }
         }
 
-        function resetUserMarker() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    
-                    if (userMarker) {
-                        userMarker.setLatLng([lat, lng]);
-                    } else {
-                        // Εδώ το draggable: true επιτρέπει την κίνηση
-                        userMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
-                    }
-                    userMarker.bringToFront(); // Εξασφαλίζει ότι είναι πάνω από τα άλλα
-                    userMarker.bindPopup(getUserPopupContent()).openPopup();
-                    map.setView([lat, lng], 17);
-                }, null, { enableHighAccuracy: true });
-            }
-        }
-
-        function getUserPopupContent() {
-            return `<div style="text-align:center;"><b>Είσαι εδώ!</b><br>
-                <button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση θέσης</button>
-                <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
-                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε Τώρα</button></div>`;
-        }
-
-        function saveCurrentLocation() {
-            let pos = userMarker.getLatLng();
-            localStorage.setItem('savedLat', pos.lat);
-            localStorage.setItem('savedLng', pos.lng);
-            savedPosition = pos;
-            showSavedMarker();
-            alert("Η θέση αποθηκεύτηκε!");
-            userMarker.closePopup();
-        }
-
         function submitSavedWithPhoto() {
             const file = document.getElementById('savedPhotoInput').files[0];
             let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
@@ -148,6 +112,52 @@
             savedMarker = null;
             savedPosition = null;
             map.closePopup();
+        }
+
+        function loadSavedPosition() {
+            const lat = localStorage.getItem('savedLat');
+            const lng = localStorage.getItem('savedLng');
+            if (lat && lng) {
+                savedPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
+            }
+        }
+
+        function resetUserMarker() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    if (userMarker) {
+                        userMarker.setLatLng([lat, lng]);
+                    } else {
+                        userMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                    }
+                    
+                    // ΑΥΤΗ ΕΙΝΑΙ Η ΜΟΝΑΔΙΚΗ ΑΛΛΑΓΗ ΠΟΥ ΧΡΕΙΑΖΕΣΑΙ:
+                    userMarker.bringToFront(); 
+                    
+                    userMarker.bindPopup(getUserPopupContent()).openPopup();
+                    map.setView([lat, lng], 17);
+                }, null, { enableHighAccuracy: true });
+            }
+        }
+
+        function getUserPopupContent() {
+            let html = `<div style="text-align:center;"><b>Είσαι εδώ!</b><br>
+                <button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση θέσης</button>
+                <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
+                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε Τώρα</button></div>`;
+            return html;
+        }
+
+        function saveCurrentLocation() {
+            let pos = userMarker.getLatLng();
+            localStorage.setItem('savedLat', pos.lat);
+            localStorage.setItem('savedLng', pos.lng);
+            savedPosition = pos;
+            showSavedMarker();
+            alert("Η θέση αποθηκεύτηκε!");
+            userMarker.closePopup();
         }
 
         function submitPosition(isUserMarker) {
@@ -211,12 +221,6 @@
             loadSpots();
         }
 
-        // Εκκίνηση
-        function loadSavedPosition() {
-            const lat = localStorage.getItem('savedLat');
-            const lng = localStorage.getItem('savedLng');
-            if (lat && lng) savedPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
-        }
         loadSavedPosition();
         showSavedMarker();
         resetUserMarker();
