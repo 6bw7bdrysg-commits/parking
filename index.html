@@ -169,14 +169,26 @@
             }
         }
 
-        var lastClickedLatLng = null;
+var lastClickedMarker = null; // Προσθήκη μεταβλητής για τον έλεγχο της πινέζας
+
         map.on('click', function(e) {
+            // Αν υπάρχει ήδη πινέζα από προηγούμενο κλικ, την αφαιρούμε
+            if (lastClickedMarker) map.removeLayer(lastClickedMarker);
+            
             lastClickedLatLng = e.latlng;
-            L.popup().setLatLng(e.latlng).setContent(`
+            
+            // Δημιουργία draggable πινέζας
+            lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
+            
+            // Το popup με τις ίδιες δυνατότητες
+            let popupContent = `
                 <div style="text-align:center;"><b>Νέα θέση</b><br>
                 <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;">
                 <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>
-            `).openOn(map);
+            `;
+            
+            lastClickedMarker.bindPopup(popupContent).openPopup();
+            lastClickedMarker.bringToFront();
         });
 
         async function sendToServer(lat, lng, mins, photo) {
