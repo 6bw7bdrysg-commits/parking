@@ -172,17 +172,13 @@
 var lastClickedMarker = null; // Προσθήκη μεταβλητής για τον έλεγχο της πινέζας
 
         map.on('click', function(e) {
-            // Αν υπάρχει ήδη πινέζα από προηγούμενο κλικ, την αφαιρούμε
             if (lastClickedMarker) map.removeLayer(lastClickedMarker);
             
-            lastClickedLatLng = e.latlng;
-            
-            // Δημιουργία draggable πινέζας
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
             
-            // Το popup με τις ίδιες δυνατότητες
             let popupContent = `
                 <div style="text-align:center;"><b>Νέα θέση</b><br>
+                <button class="save-btn" onclick="saveClickedLocation()">💾 Αποθήκευση θέσης</button>
                 <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;">
                 <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>
             `;
@@ -191,6 +187,16 @@ var lastClickedMarker = null; // Προσθήκη μεταβλητής για τ
             lastClickedMarker.bringToFront();
         });
 
+        // Προσθήκη της συνάρτησης αποθήκευσης για το κλικ
+        function saveClickedLocation() {
+            let pos = lastClickedMarker.getLatLng();
+            localStorage.setItem('savedLat', pos.lat);
+            localStorage.setItem('savedLng', pos.lng);
+            savedPosition = pos;
+            showSavedMarker();
+            alert("Η θέση αποθηκεύτηκε!");
+            lastClickedMarker.closePopup();
+        }
         async function sendToServer(lat, lng, mins, photo) {
             await fetch(`${API_BASE_URL}/free-spot`, {
                 method: 'POST',
