@@ -10,7 +10,6 @@
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100vh; width: 100vw; }
         
-        /* Κυλιόμενο Banner */
         .marquee-container {
             position: absolute; top: 0; left: 0; width: 100%;
             background: rgba(0, 0, 0, 0.8); color: white;
@@ -26,20 +25,20 @@
             100% { transform: translate(-100%, 0); }
         }
         
-        /* Κουμπί επαναφοράς θέσης */
         .my-location-btn {
             position: absolute; top: 60px; right: 10px; z-index: 1000;
             background: white; padding: 10px; border-radius: 5px;
             cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
         
-        .btn-action, .nav-btn, .occupy-btn { 
+        .btn-action, .nav-btn, .occupy-btn, .save-btn { 
             border: none; padding: 12px; width: 100%; margin-top: 8px; 
             cursor: pointer; font-size: 16px; border-radius: 8px; font-weight: bold;
         }
         .btn-action { background-color: #28a745; color: white; }
         .nav-btn { background-color: #007bff; color: white; }
         .occupy-btn { background-color: #dc3545; color: white; }
+        .save-btn { background-color: #ffc107; color: black; }
         .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
     </style>
 </head>
@@ -49,13 +48,14 @@
             ⚠️ Προσοχή: Η διαθεσιμότητα των θέσεων δεν είναι εγγυημένη 100%! | Δημοσιεύστε μια θέση που αδειάζει | Βοηθήστε την κοινότητα!
         </div>
     </div>
+
     <div id="map"></div>
     <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
-        
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
+        var savedPosition = null;
         
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles © Esri',
@@ -67,6 +67,15 @@
         var markers = [];
         var userMarker = null;
 
+        // Φόρτωση αποθηκευμένης θέσης από τον browser
+        function loadSavedPosition() {
+            const lat = localStorage.getItem('savedLat');
+            const lng = localStorage.getItem('savedLng');
+            if (lat && lng) {
+                savedPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
+            }
+        }
+
         function resetUserMarker() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((pos) => {
@@ -76,20 +85,46 @@
                     if (userMarker) {
                         userMarker.setLatLng([lat, lng]);
                     } else {
-                        userMarker = L.marker([lat, lng], { draggable: true }).addTo(map)
-                            .bindPopup(`
-                                <div style="text-align:center;"><b>Είσαι εδώ!</b><br>
-                                <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
-                                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>
-                            `).openPopup();
+                        userMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
                     }
+                    userMarker.bindPopup(getUserPopupContent()).openPopup();
                     map.setView([lat, lng], 17);
                 }, null, { enableHighAccuracy: true });
             }
         }
 
-        function autoLocate() {
-            resetUserMarker();
+        function getUserPopupContent() {
+            let html = `<div style="text-align:center;"><b>Είσαι εδώ!</b><br>
+                <button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση θέσης</button>
+                <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
+                <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε Τώρα</button>`;
+            if (savedPosition) {
+                html += `<button class="btn-action" style="background:#6c757d;" onclick="publishSaved()">📤 Δημοσίευσε την αποθηκευμένη</button>`;
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        function saveCurrentLocation() {
+            let pos = userMarker.getLatLng();
+            localStorage.setItem('savedLat', pos.lat);
+            localStorage.setItem('savedLng', pos.lng);
+            savedPosition = pos;
+            alert("Η θέση αποθηκεύτηκε μόνιμα!");
+            userMarker.setPopupContent(getUserPopupContent()).openPopup();
+        }
+
+        function publishSaved() {
+            if (savedPosition) {
+                let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
+                if (mins) {
+                    sendToServer(savedPosition.lat, savedPosition.lng, mins, null);
+                    localStorage.removeItem('savedLat');
+                    localStorage.removeItem('savedLng');
+                    savedPosition = null;
+                    userMarker.setPopupContent(getUserPopupContent()).openPopup();
+                }
+            }
         }
 
         function submitPosition(isUserMarker) {
@@ -147,12 +182,7 @@
                     });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`
-                            ${photoHtml}
-                            <b>Λήγει σε: ${remaining} λεπτά</b><br>
-                            <button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες</button>
-                            <button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>
-                        `);
+                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="getDirections(${spot.latitude}, ${spot.longitude})">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
                     markers.push(marker);
                 }
             });
@@ -163,7 +193,9 @@
             loadSpots();
         }
 
-        autoLocate();
+        // Εκκίνηση
+        loadSavedPosition();
+        resetUserMarker();
         loadSpots();
         setInterval(loadSpots, 5000);
     </script>
