@@ -40,16 +40,25 @@
         .occupy-btn { background-color: #dc3545; color: white; }
         .save-btn { background-color: #ffc107; color: black; }
         .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
-        .menu-btn {
-            position: absolute; top: 50px; left: 10px; z-index: 2000;
-            background: white; padding: 10px 15px; border-radius: 5px;
-            cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        .my-location-btn {
-            position: absolute; top: 100px; left: 10px; z-index: 2000;
-            background: white; padding: 10px; border-radius: 5px;
-            cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
+        /* Δημιουργούμε ένα κουτί που κρατάει τα κουμπιά αριστερά */
+.controls-container {
+    position: absolute;
+    top: 60px; /* Κάτω από το marquee */
+    left: 10px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.menu-btn, .my-location-btn {
+    background: white; 
+    padding: 10px 15px; 
+    border-radius: 5px;
+    cursor: pointer; 
+    font-weight: bold; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    text-align: center;
+}
         #menu-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 250px; height: 100%;
             background: rgba(255, 255, 255, 0.98); z-index: 3000; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.3);
