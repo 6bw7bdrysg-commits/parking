@@ -171,23 +171,23 @@
 
 var lastClickedMarker = null; // Προσθήκη μεταβλητής για τον έλεγχο της πινέζας
 
-       map.on('click', function(e) {
+     map.on('click', function(e) {
             if (lastClickedMarker) map.removeLayer(lastClickedMarker);
             
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
             
+            // Δημιουργούμε το ID του input μοναδικό για να το βρίσκει σίγουρα
             let popupContent = `
-                <div style="text-align:center; min-width: 150px;">
+                <div style="text-align:center;">
                     <b>Νέα θέση</b><br>
-                    <button class="save-btn" style="margin-top:5px;" onclick="saveClickedLocation()">💾 Αποθήκευση</button>
-                    <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;">
-                    <button class="btn-action" style="margin-top:5px;" onclick="submitPosition(false)">📢 Δημοσίευσε</button>
-                    <button class="cancel-btn" style="margin-top:5px;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button>
+                    <button class="save-btn" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br>
+                    <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br>
+                    <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button>
+                    <button class="occupy-btn" style="margin-top:5px;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button>
                 </div>
             `;
             
-            lastClickedMarker.bindPopup(popupContent);
-            lastClickedMarker.openPopup();
+            lastClickedMarker.bindPopup(popupContent).openPopup();
             lastClickedMarker.bringToFront();
         });
 
