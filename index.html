@@ -25,12 +25,24 @@
             100% { transform: translate(-100%, 0); }
         }
         
-        .my-location-btn {
-            position: absolute; top: 60px; right: 10px; z-index: 1000;
-            background: white; padding: 10px; border-radius: 5px;
+        /* Container για τα κουμπιά - τοποθέτηση αριστερά κάτω από το marquee */
+        .controls-container {
+            position: absolute; top: 60px; left: 10px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .menu-btn, .my-location-btn {
+            background: white; padding: 10px 15px; border-radius: 5px;
             cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            text-align: center; pointer-events: auto;
         }
         
+        /* Μενού Overlay */
+        #menu-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 250px; height: 100%;
+            background: rgba(255, 255, 255, 0.98); z-index: 3000; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+        }
+        .close-menu { cursor: pointer; color: red; font-size: 20px; font-weight: bold; margin-bottom: 20px; }
+
         .btn-action, .nav-btn, .occupy-btn, .save-btn { 
             border: none; padding: 12px; width: 100%; margin-top: 8px; 
             cursor: pointer; font-size: 16px; border-radius: 8px; font-weight: bold;
@@ -40,35 +52,20 @@
         .occupy-btn { background-color: #dc3545; color: white; }
         .save-btn { background-color: #ffc107; color: black; }
         .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
-        /* Δημιουργούμε ένα κουτί που κρατάει τα κουμπιά αριστερά */
-.controls-container {
-    position: absolute;
-    top: 60px; /* Κάτω από το marquee */
-    left: 10px;
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.menu-btn, .my-location-btn {
-    background: white; 
-    padding: 10px 15px; 
-    border-radius: 5px;
-    cursor: pointer; 
-    font-weight: bold; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    text-align: center;
-}
-        #menu-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 250px; height: 100%;
-            background: rgba(255, 255, 255, 0.98); z-index: 3000; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.3);
-        }
-        .close-menu { cursor: pointer; color: red; font-size: 20px; font-weight: bold; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="marquee-container">
+        <div class="marquee-text">
+            ⚠️ Προσοχή: Η διαθεσιμότητα των θέσεων δεν είναι εγγυημένη 100%! | Δημοσιεύστε μια θέση που αδειάζει | Βοηθήστε την κοινότητα!
+        </div>
+    </div>
+
+    <div class="controls-container">
         <div class="menu-btn" onclick="toggleMenu()">☰ Μενού</div>
+        <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
+    </div>
+
     <div id="menu-overlay">
         <div class="close-menu" onclick="toggleMenu()">✖ Κλείσιμο</div>
         <h2>Μενού</h2>
@@ -78,13 +75,8 @@
             <li onclick="alert('Όροι: Υπεύθυνη χρήση.')" style="padding:10px 0; border-bottom:1px solid #ccc;">📜 Όροι Χρήσης</li>
         </ul>
     </div>
-        <div class="marquee-text">
-            ⚠️ Προσοχή: Η διαθεσιμότητα των θέσεων δεν είναι εγγυημένη 100%! | Δημοσιεύστε μια θέση που αδειάζει | Βοηθήστε την κοινότητα!
-        </div>
-    </div>
 
     <div id="map"></div>
-    <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
@@ -93,6 +85,7 @@
         var markers = [];
         var userMarker = null;
         var savedMarker = null;
+        var lastClickedMarker = null;
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles © Esri',
@@ -100,6 +93,11 @@
         }).addTo(map);
 
         window.addEventListener('resize', () => map.invalidateSize());
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu-overlay');
+            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        }
 
         function showSavedMarker() {
             if (savedPosition) {
@@ -113,7 +111,6 @@
                         <button class="occupy-btn" onclick="deleteSavedMarker()">🗑️ Διαγραφή</button>
                     </div>`;
                 
-                // Χρησιμοποιούμε κίτρινη πινέζα για την αποθηκευμένη
                 savedMarker = L.marker([savedPosition.lat, savedPosition.lng], {
                     icon: L.icon({
                         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
@@ -193,8 +190,7 @@
             userMarker.closePopup();
         }
 
-       function submitPosition(isUserMarker) {
-            // Βρίσκουμε το σωστό marker και το σωστό input
+        function submitPosition(isUserMarker) {
             let pos;
             let fileInput;
 
@@ -215,7 +211,6 @@
                     const reader = new FileReader();
                     reader.onloadend = () => {
                         sendToServer(pos.lat, pos.lng, mins, reader.result);
-                        // Αν είναι το clicked marker, το αφαιρούμε μετά την επιτυχή αποστολή
                         if (!isUserMarker) cancelClickedMarker();
                     };
                     reader.readAsDataURL(file);
@@ -226,9 +221,7 @@
             }
         }
 
-var lastClickedMarker = null; // Προσθήκη μεταβλητής για τον έλεγχο της πινέζας
-
-     map.on('click', function(e) {
+        map.on('click', function(e) {
             if (lastClickedMarker) map.removeLayer(lastClickedMarker);
             
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
@@ -246,8 +239,6 @@ var lastClickedMarker = null; // Προσθήκη μεταβλητής για τ
             lastClickedMarker.bindPopup(popupContent);
             lastClickedMarker.openPopup();
             lastClickedMarker.bringToFront();
-
-            // Αυτή η γραμμή είναι το μυστικό για να δουλέψουν τα κουμπιά:
             L.DomEvent.disableClickPropagation(lastClickedMarker._popup._container);
         });
 
@@ -257,7 +248,6 @@ var lastClickedMarker = null; // Προσθήκη μεταβλητής για τ
             map.closePopup();
         }
 
-        // Προσθήκη της συνάρτησης αποθήκευσης για το κλικ
         function saveClickedLocation() {
             let pos = lastClickedMarker.getLatLng();
             localStorage.setItem('savedLat', pos.lat);
@@ -267,6 +257,7 @@ var lastClickedMarker = null; // Προσθήκη μεταβλητής για τ
             alert("Η θέση αποθηκεύτηκε!");
             lastClickedMarker.closePopup();
         }
+
         async function sendToServer(lat, lng, mins, photo) {
             await fetch(`${API_BASE_URL}/free-spot`, {
                 method: 'POST',
@@ -294,7 +285,7 @@ var lastClickedMarker = null; // Προσθήκη μεταβλητής για τ
                     });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
+                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=$${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
                     markers.push(marker);
                 }
             });
@@ -313,23 +304,17 @@ var lastClickedMarker = null; // Προσθήκη μεταβλητής για τ
                 img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800; // Μέγιστο πλάτος
+                    const MAX_WIDTH = 800;
                     const scaleSize = MAX_WIDTH / img.width;
                     canvas.width = MAX_WIDTH;
                     canvas.height = img.height * scaleSize;
-                    
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
-                    // Επιστρέφει τη φωτογραφία σε ποιότητα 0.7 (70%) για να είναι ελαφριά
                     callback(canvas.toDataURL('image/jpeg', 0.7));
                 };
             };
         }
-        function toggleMenu() {
-            const menu = document.getElementById('menu-overlay');
-            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-        }
+
         loadSavedPosition();
         showSavedMarker();
         resetUserMarker();
