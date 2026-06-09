@@ -11,11 +11,7 @@
         #map { height: 100%; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
         
         /* Αφαίρεση λευκού πλαισίου από τα popups */
-        .leaflet-popup-content-wrapper {
-            background: transparent !important;
-            box-shadow: none !important;
-            border: none !important;
-        }
+        .leaflet-popup-content-wrapper { background: transparent !important; box-shadow: none !important; border: none !important; }
         .leaflet-popup-tip { display: none !important; }
         .leaflet-container a.leaflet-popup-close-button { display: none !important; }
 
@@ -29,15 +25,20 @@
             display: inline-block; padding-left: 100%;
             animation: marquee 15s linear infinite;
         }
-        @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
-        }
+        @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
         
         .controls-container {
             position: absolute; top: 60px; right: 10px; z-index: 1000;
             display: flex; flex-direction: column; gap: 10px;
         }
+        
+        /* ΝΕΟ: Εμφάνιση Karma */
+        .karma-display {
+            background: #ffc107; padding: 10px 15px; border-radius: 5px;
+            font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            text-align: center; color: black; border: 2px solid #e0a800;
+        }
+        
         .menu-btn, .my-location-btn {
             background: white; padding: 10px 15px; border-radius: 5px;
             cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
@@ -46,16 +47,14 @@
         
         #menu-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 250px; height: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
             z-index: 3000; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.3);
         }
         .close-menu { cursor: pointer; color: red; font-size: 20px; font-weight: bold; margin-bottom: 20px; }
 
         .modal {
             display: none; position: fixed; top: 10%; left: 10%; width: 80%; height: 80%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
             z-index: 4000; border-radius: 15px; padding: 20px;
             box-shadow: 0 0 20px rgba(0,0,0,0.3); overflow-y: auto;
         }
@@ -80,6 +79,7 @@
     </div>
 
     <div class="controls-container">
+        <div class="karma-display" id="karma-points">🌟 0 Karma</div>
         <div class="menu-btn" onclick="toggleMenu()">☰ Μενού</div>
         <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
     </div>
@@ -103,14 +103,13 @@
         • <b>Κόκκινο 🔴:</b> Η θέση είναι στα "τελευταία της" – αν είσαι κοντά, είναι δική σου.<br>
         Πάτα πάνω στη θέση και διάλεξε "Οδηγίες" για να σε πάει το GPS απευθείας εκεί.</p>
         <p><b>2. Γίνεσαι μέλος μιας μεγάλης παρέας</b><br>Όταν φεύγεις από μια θέση, μην την αφήνεις να πάει χαμένη!<br>
-        • Πάτα "Δημοσίευσε" και ενημέρωσε τους υπόλοιπους ότι αδειάζεις.<br>
+        • Πάτα "Δημοσίευσε" και ενημέρωσε τους υπόλοιπους ότι αδειάζεις. <b>(Κερδίζεις +10 Karma!)</b><br>
         • Αν βγάλεις μια φωτογραφία, βοηθάς τους άλλους να αναγνωρίσουν τη θέση αμέσως.<br>
         Με κάθε δημοσίευσή σου, κάποιος άλλος γλιτώνει πολύτιμο χρόνο!</p>
         <p><b>3. Προγραμματίζεις την αναχώρησή σου (Smart Planning)</b><br>Είσαι κάπου (σπίτι, καφέ, δουλειά) και ξέρεις ότι θα φύγεις σε λίγη ώρα;<br>
         • Πάτα "Αποθήκευση θέσης" μόλις παρκάρεις. Η θέση αποθηκεύεται με χρυσό χρώμα 🟡 για να την έχεις έτοιμη.<br>
         • Λίγα λεπτά πριν ξεκινήσεις, άνοιξε την εφαρμογή, πάτα τη χρυσή θέση και επίλεξε "Δημοσίευσε".<br>
         Έτσι, οι οδηγοί γύρω σου θα δουν τη θέση να "κοκκινίζει" ακριβώς τη στιγμή που ετοιμάζεσαι να βγεις!</p>
-        <p><b>Με λίγα λόγια:</b> Είδες ελεύθερο; Πήγαινε. Φεύγεις από κάπου; Ενημέρωσε την κοινότητα. Βοηθάς εσένα, βοηθάς τους γείτονές σου!</p>
         <button class="close-modal" onclick="closeModal('instructions-modal')">Κλείσιμο</button>
     </div>
 
@@ -119,26 +118,14 @@
         <p>Το <b>ParkKarma</b> ξεκίνησε από μια απλή, καθημερινή αφορμή: την ταλαιπωρία όλων μας να βρούμε μια θέση πάρκινγκ στην πόλη.</p>
         <p>Σκεφτήκαμε πως αν αντί να ψάχνουμε μόνοι μας, γινόμασταν όλοι μαζί ένας "ζωντανός χάρτης", η ζωή μας θα γινόταν πιο εύκολη, λιγότερο αγχωτική και η πόλη μας πιο φιλική.</p>
         <p><b>Το όραμά μας:</b> Να γίνει το ParkKarma ο καλύτερος βοηθός σου στις καθημερινές διαδρομές.</p>
-        <p><b>Το μέλλον:</b> Σύντομα θα προσθέσουμε στοιχεία επικοινωνίας για να μας στέλνεις τις ιδέες σου!</p>
         <button class="close-modal" onclick="closeModal('about-modal')">Κλείσιμο</button>
     </div>
 
     <div id="terms-modal" class="modal">
         <h2 style="color:#dc3545;">📜 Όροι Χρήσης & Αποποίηση Ευθύνης</h2>
-        
         <p><b>Ενημερωτικός χαρακτήρας:</b> Το ParkKarma είναι μια εφαρμογή που βασίζεται αποκλειστικά στις πληροφορίες που παρέχουν οι χρήστες. Η εφαρμογή δεν εγγυάται τη διαθεσιμότητα καμίας θέσης στάθμευσης.</p>
-        
-        <p><b>Αποποίηση Ευθύνης:</b> Οι δημιουργοί της εφαρμογής δεν φέρουν καμία ευθύνη για:</p>
-        <ul style="padding-left: 20px;">
-            <li>Τυχόν ατυχήματα ή ζημιές κατά τη διάρκεια της στάθμευσης.</li>
-            <li>Κλήσεις της τροχαίας ή πρόστιμα που ενδέχεται να προκύψουν.</li>
-            <li>Ανακρίβειες στις πληροφορίες που δημοσιεύουν άλλοι χρήστες (π.χ. αν μια θέση τελικά δεν είναι ελεύθερη).</li>
-        </ul>
-        
-        <p><b>Υπεύθυνη χρήση:</b> Απαγορεύεται η δημοσίευση ψευδών δεδομένων ή κακόβουλου περιεχομένου. Ο χρήστης είναι αποκλειστικά υπεύθυνος για τη νομιμότητα των ενεργειών του (π.χ. σεβασμός του ΚΟΚ, στάθμευση σε επιτρεπόμενα σημεία).</p>
-        
-        <p><b>Ιδιωτικότητα:</b> Η εφαρμογή δεν συλλέγει προσωπικά δεδομένα πέρα από την τοποθεσία που εσύ επιλέγεις να μοιραστείς. Χρησιμοποιείς την εφαρμογή με δική σου ευθύνη.</p>
-        
+        <p><b>Αποποίηση Ευθύνης:</b> Οι δημιουργοί της εφαρμογής δεν φέρουν καμία ευθύνη για ατυχήματα, κλήσεις ή ανακρίβειες.</p>
+        <p><b>Υπεύθυνη χρήση:</b> Ο χρήστης είναι αποκλειστικά υπεύθυνος για τη νομιμότητα των ενεργειών του.</p>
         <button class="close-modal" onclick="closeModal('terms-modal')">Κατανοητό</button>
     </div>
 
@@ -147,15 +134,40 @@
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
-        
         var savedPosition = null, markers = [], userMarker = null, savedMarker = null, lastClickedMarker = null;
+
+        // ΝΕΟ: Σύστημα Αναγνώρισης Χρήστη (ID) και Karma
+        let deviceID = localStorage.getItem('parkkarma_user_id');
+        if (!deviceID) {
+            // Δημιουργία τυχαίου ID για τον χρήστη (π.χ. user_5f8a9)
+            deviceID = 'user_' + Math.random().toString(16).slice(2, 7);
+            localStorage.setItem('parkkarma_user_id', deviceID);
+        }
+        console.log("Device ID:", deviceID);
+
+        // Φόρτωση των Karma πόντων από το κινητό του χρήστη
+        let userKarma = parseInt(localStorage.getItem('parkkarma_points')) || 0;
+        updateKarmaDisplay();
+
+        function updateKarmaDisplay() {
+            document.getElementById('karma-points').innerText = `🌟 ${userKarma} Karma`;
+            localStorage.setItem('parkkarma_points', userKarma);
+        }
+
+        // Συνάρτηση για προσθήκη πόντων (π.χ. όταν δημοσιεύει θέση)
+        function addKarma(points) {
+            userKarma += points;
+            updateKarmaDisplay();
+            // Μικρό εφέ ειδοποίησης (alert)
+            setTimeout(() => { alert(`Μπράβο! Κέρδισες +${points} Karma!`); }, 500);
+        }
+
 
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
         function openModal(id) { document.getElementById(id).style.display = 'block'; toggleMenu(); }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri', maxZoom: 19 }).addTo(map);
-
         window.addEventListener('resize', () => map.invalidateSize());
 
         function showSavedMarker() {
@@ -226,7 +238,13 @@
         function saveClickedLocation() { let pos = lastClickedMarker.getLatLng(); localStorage.setItem('savedLat', pos.lat); localStorage.setItem('savedLng', pos.lng); savedPosition = pos; showSavedMarker(); alert("Η θέση αποθηκεύτηκε!"); lastClickedMarker.closePopup(); }
 
         async function sendToServer(lat, lng, mins, photo) {
+            // ΝΕΟ: Αντί για user_id: 1 στέλνουμε το string του ID μας (π.χ. 'user_12345')
+            // Προς το παρόν, αφήνουμε το '1' για να μην σπάσει ο Python Server, αλλά στο μέλλον θα περνάμε το deviceID
             await fetch(`${API_BASE_URL}/free-spot`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: 1, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo}) });
+            
+            // ΝΕΟ: Ανεβάζουμε το Karma κατά 10 πόντους με κάθε επιτυχημένη δημοσίευση!
+            addKarma(10);
+            
             map.closePopup(); loadSpots();
         }
 
