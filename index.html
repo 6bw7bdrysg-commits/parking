@@ -24,7 +24,6 @@
             100% { transform: translate(-100%, 0); }
         }
         
-        /* Container για τα κουμπιά - Δεξιά πλευρά */
         .controls-container {
             position: absolute; top: 60px; right: 10px; z-index: 1000;
             display: flex; flex-direction: column; gap: 10px;
@@ -35,12 +34,18 @@
             text-align: center; pointer-events: auto;
         }
         
-        /* Μενού Overlay */
         #menu-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 250px; height: 100%;
             background: rgba(255, 255, 255, 0.98); z-index: 3000; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.3);
         }
         .close-menu { cursor: pointer; color: red; font-size: 20px; font-weight: bold; margin-bottom: 20px; }
+
+        /* Modal Οδηγιών */
+        #instructions-modal {
+            display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 90%;
+            background: white; z-index: 4000; border-radius: 15px; padding: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); overflow-y: auto;
+        }
 
         .btn-action, .nav-btn, .occupy-btn, .save-btn { 
             border: none; padding: 12px; width: 100%; margin-top: 8px; 
@@ -69,17 +74,36 @@
         <div class="close-menu" onclick="toggleMenu()">✖ Κλείσιμο</div>
         <h2>Μενού</h2>
         <ul style="list-style: none; padding: 0;">
-            <li onclick="alert('Οδηγίες: Κάνε κλικ στον χάρτη για να ορίσεις θέση!')" style="padding:10px 0; border-bottom:1px solid #ccc;">ℹ️ Οδηγίες Χρήσης</li>
-            <li onclick="alert('Koinon Parking - 2026')" style="padding:10px 0; border-bottom:1px solid #ccc;">👥 Σχετικά με εμάς</li>
-            <li onclick="alert('Όροι: Υπεύθυνη χρήση.')" style="padding:10px 0; border-bottom:1px solid #ccc;">📜 Όροι Χρήσης</li>
+            <li onclick="document.getElementById('instructions-modal').style.display='block'; toggleMenu()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">ℹ️ Οδηγίες Χρήσης</li>
+            <li onclick="alert('Koinon Parking - 2026')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">👥 Σχετικά με εμάς</li>
+            <li onclick="alert('Όροι: Υπεύθυνη χρήση.')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">📜 Όροι Χρήσης</li>
         </ul>
+    </div>
+
+    <div id="instructions-modal">
+        <h2 style="color:#007bff;">Καλώς ήρθες στο Koinon Parking!</h2>
+        <p>Η εφαρμογή που κάνει το παρκάρισμα στην πόλη, ομαδικό άθλημα.</p>
+        
+        <h3>1. Βρίσκεις πάρκινγκ σε δευτερόλεπτα</h3>
+        <p>• <b>Πράσινο 🟢:</b> Μια θέση μόλις άδειασε – πρόλαβε την!<br>
+           • <b>Κόκκινο 🔴:</b> Η θέση είναι στα "τελευταία της". Αν είσαι κοντά, είναι δική σου.<br>
+           • Πάτα <b>"Οδηγίες"</b> για να σε πάει το GPS απευθείας εκεί.</p>
+
+        <h3>2. Γίνεσαι μέλος μιας μεγάλης παρέας</h3>
+        <p>• Φεύγεις από μια θέση; Μην την αφήνεις να πάει χαμένη! Πάτα <b>"Δημοσίευσε"</b> για να ενημερώσεις τους υπόλοιπους.<br>
+           • Αν βγάλεις μια φωτογραφία, βοηθάς τους άλλους να αναγνωρίσουν τη θέση αμέσως!</p>
+
+        <h3>3. Προγραμματίζεις την αναχώρησή σου (Smart Planning)</h3>
+        <p>• Μόλις παρκάρεις, πάτα <b>"Αποθήκευση θέσης"</b>. Η θέση αποθηκεύεται με χρυσό χρώμα 🟡.<br>
+           • Λίγα λεπτά πριν ξεκινήσεις, άνοιξε την εφαρμογή, πάτα τη χρυσή θέση και επίλεξε <b>"Δημοσίευσε"</b> για να την αδειάσεις για κάποιον άλλον!</p>
+
+        <button onclick="document.getElementById('instructions-modal').style.display='none'" style="width:100%; padding:15px; background:#007bff; color:white; border:none; border-radius:10px; font-size:18px; cursor:pointer;">Κλείσιμο</button>
     </div>
 
     <div id="map"></div>
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
-        // Αρχικοποίηση χάρτη
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
         
         var savedPosition = null;
@@ -286,7 +310,7 @@
                     });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
+                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
                     markers.push(marker);
                 }
             });
@@ -297,7 +321,6 @@
             loadSpots();
         }
 
-        // Τελικές εντολές
         loadSavedPosition();
         showSavedMarker();
         resetUserMarker();
