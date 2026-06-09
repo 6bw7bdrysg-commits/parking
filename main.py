@@ -1,6 +1,7 @@
 import os
 import datetime
 import smtplib
+import re
 from email.mime.text import MIMEText
 
 from fastapi import FastAPI, Depends, HTTPException
@@ -74,10 +75,15 @@ def read_root():
     return FileResponse(INDEX_FILE)
 
 
-# 1. ΕΓΓΡΑΦΗ (REGISTER)
+# 1. ΕΓΓΡΑΦΗ (REGISTER) ΜΕ ΕΛΕΓΧΟ EMAIL
 @app.post("/register")
 def register(user: UserRegister, db: Session = Depends(get_db)):
     email_lower = user.email.strip().lower()
+    
+    # Έλεγχος έγκυρης μορφής email
+    email_regex = r'^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
+    if not re.search(email_regex, email_lower):
+        return JSONResponse(status_code=400, content={"error": "Μη έγκυρη μορφή email."})
     
     # Έλεγχος αν υπάρχει ήδη ο χρήστης
     existing_user = db.query(models.DBUser).filter(models.DBUser.email == email_lower).first()
@@ -117,7 +123,7 @@ def reset_password_request(req: PasswordReset, db: Session = Depends(get_db)):
         return JSONResponse(status_code=404, content={"error": "Δεν βρέθηκε λογαριασμός με αυτό το email."})
     
     try:
-        # Ρυθμίσεις του email αποστολέα (Άλλαξέ τα με τα δικά σου)
+        # Ρυθμίσεις του email αποστολέα
         sender_email = "your-app-email@gmail.com" 
         sender_password = "your-app-password"    
         
@@ -132,7 +138,7 @@ def reset_password_request(req: PasswordReset, db: Session = Depends(get_db)):
         msg['From'] = sender_email
         msg['To'] = email_lower
         
-        # Αποστολή μέσω Gmail (ή άλλου παρόχου)
+        # Αποστολή μέσω Gmail
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(sender_email, sender_password)
             server.sendmail(sender_email, email_lower, msg.as_string())
