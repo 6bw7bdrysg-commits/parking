@@ -10,7 +10,6 @@
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100%; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        /* Αφαίρεση λευκού πλαισίου από τα popups */
         .leaflet-popup-content-wrapper { background: transparent !important; box-shadow: none !important; border: none !important; }
         .leaflet-popup-tip { display: none !important; }
         .leaflet-container a.leaflet-popup-close-button { display: none !important; }
@@ -32,7 +31,6 @@
             display: flex; flex-direction: column; gap: 10px;
         }
         
-        /* ΝΕΟ: Εμφάνιση Karma */
         .karma-display {
             background: #ffc107; padding: 10px 15px; border-radius: 5px;
             font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
@@ -100,32 +98,23 @@
         <h3>Τι μπορείς να κάνεις εδώ;</h3>
         <p><b>1. Βρίσκεις πάρκινγκ σε δευτερόλεπτα</b><br>Μην γυρνάς άσκοπα! Κοίτα τον χάρτη:<br>
         • <b>Πράσινο 🟢:</b> Μια θέση μόλις άδειασε – πρόλαβε την!<br>
-        • <b>Κόκκινο 🔴:</b> Η θέση είναι στα "τελευταία της" – αν είσαι κοντά, είναι δική σου.<br>
-        Πάτα πάνω στη θέση και διάλεξε "Οδηγίες" για να σε πάει το GPS απευθείας εκεί.</p>
-        <p><b>2. Γίνεσαι μέλος μιας μεγάλης παρέας</b><br>Όταν φεύγεις από μια θέση, μην την αφήνεις να πάει χαμένη!<br>
-        • Πάτα "Δημοσίευσε" και ενημέρωσε τους υπόλοιπους ότι αδειάζεις. <b>(Κερδίζεις +10 Karma!)</b><br>
-        • Αν βγάλεις μια φωτογραφία, βοηθάς τους άλλους να αναγνωρίσουν τη θέση αμέσως.<br>
-        Με κάθε δημοσίευσή σου, κάποιος άλλος γλιτώνει πολύτιμο χρόνο!</p>
-        <p><b>3. Προγραμματίζεις την αναχώρησή σου (Smart Planning)</b><br>Είσαι κάπου (σπίτι, καφέ, δουλειά) και ξέρεις ότι θα φύγεις σε λίγη ώρα;<br>
-        • Πάτα "Αποθήκευση θέσης" μόλις παρκάρεις. Η θέση αποθηκεύεται με χρυσό χρώμα 🟡 για να την έχεις έτοιμη.<br>
-        • Λίγα λεπτά πριν ξεκινήσεις, άνοιξε την εφαρμογή, πάτα τη χρυσή θέση και επίλεξε "Δημοσίευσε".<br>
-        Έτσι, οι οδηγοί γύρω σου θα δουν τη θέση να "κοκκινίζει" ακριβώς τη στιγμή που ετοιμάζεσαι να βγεις!</p>
+        • <b>Κόκκινο 🔴:</b> Η θέση είναι στα "τελευταία της" – αν είσαι κοντά, είναι δική σου.</p>
+        <p><b>2. Κερδίζεις Karma Πόντους</b><br>
+        • Πάτα "Δημοσίευσε" όταν φεύγεις από μια θέση.<br>
+        • Αν ένας <b>άλλος οδηγός</b> βρει τη θέση σου και πατήσει "Κατειλημμένη", κερδίζεις αυτόματα <b>+10 Karma</b>!<br>
+        • Αν την ακυρώσεις ή την κλείσεις εσύ ο ίδιος, δεν παίρνεις πόντους.</p>
         <button class="close-modal" onclick="closeModal('instructions-modal')">Κλείσιμο</button>
     </div>
 
     <div id="about-modal" class="modal">
         <h2 style="color:#007bff;">👥 Σχετικά με εμάς</h2>
-        <p>Το <b>ParkKarma</b> ξεκίνησε από μια απλή, καθημερινή αφορμή: την ταλαιπωρία όλων μας να βρούμε μια θέση πάρκινγκ στην πόλη.</p>
-        <p>Σκεφτήκαμε πως αν αντί να ψάχνουμε μόνοι μας, γινόμασταν όλοι μαζί ένας "ζωντανός χάρτης", η ζωή μας θα γινόταν πιο εύκολη, λιγότερο αγχωτική και η πόλη μας πιο φιλική.</p>
-        <p><b>Το όραμά μας:</b> Να γίνει το ParkKarma ο καλύτερος βοηθός σου στις καθημερινές διαδρομές.</p>
+        <p>Το ParkKarma μετατρέπει την εύρεση στάθμευσης σε ομαδική συνεργασία γειτονιάς.</p>
         <button class="close-modal" onclick="closeModal('about-modal')">Κλείσιμο</button>
     </div>
 
     <div id="terms-modal" class="modal">
-        <h2 style="color:#dc3545;">📜 Όροι Χρήσης & Αποποίηση Ευθύνης</h2>
-        <p><b>Ενημερωτικός χαρακτήρας:</b> Το ParkKarma είναι μια εφαρμογή που βασίζεται αποκλειστικά στις πληροφορίες που παρέχουν οι χρήστες. Η εφαρμογή δεν εγγυάται τη διαθεσιμότητα καμίας θέσης στάθμευσης.</p>
-        <p><b>Αποποίηση Ευθύνης:</b> Οι δημιουργοί της εφαρμογής δεν φέρουν καμία ευθύνη για ατυχήματα, κλήσεις ή ανακρίβειες.</p>
-        <p><b>Υπεύθυνη χρήση:</b> Ο χρήστης είναι αποκλειστικά υπεύθυνος για τη νομιμότητα των ενεργειών του.</p>
+        <h2 style="color:#dc3545;">📜 Όροι Χρήσης</h2>
+        <p>Βασιζόμαστε στην καλή πίστη και την ειλικρίνεια της κοινότητας.</p>
         <button class="close-modal" onclick="closeModal('terms-modal')">Κατανοητό</button>
     </div>
 
@@ -136,16 +125,15 @@
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
         var savedPosition = null, markers = [], userMarker = null, savedMarker = null, lastClickedMarker = null;
 
-        // ΝΕΟ: Σύστημα Αναγνώρισης Χρήστη (ID) και Karma
+        // Δημιουργία τυχαίου αριθμητικού ID (π.χ. μεταξύ 100000 και 999999)
         let deviceID = localStorage.getItem('parkkarma_user_id');
         if (!deviceID) {
-            // Δημιουργία τυχαίου ID για τον χρήστη (π.χ. user_5f8a9)
-            deviceID = 'user_' + Math.random().toString(16).slice(2, 7);
+            deviceID = Math.floor(100000 + Math.random() * 900000).toString();
             localStorage.setItem('parkkarma_user_id', deviceID);
         }
-        console.log("Device ID:", deviceID);
+        console.log("Your User ID:", deviceID);
 
-        // Φόρτωση των Karma πόντων από το κινητό του χρήστη
+        // Συγχρονισμός Karma από τοπική μνήμη ή server (στο μέλλον)
         let userKarma = parseInt(localStorage.getItem('parkkarma_points')) || 0;
         updateKarmaDisplay();
 
@@ -154,14 +142,19 @@
             localStorage.setItem('parkkarma_points', userKarma);
         }
 
-        // Συνάρτηση για προσθήκη πόντων (π.χ. όταν δημοσιεύει θέση)
-        function addKarma(points) {
-            userKarma += points;
-            updateKarmaDisplay();
-            // Μικρό εφέ ειδοποίησης (alert)
-            setTimeout(() => { alert(`Μπράβο! Κέρδισες +${points} Karma!`); }, 500);
+        // Αυτή η συνάρτηση θα καλείται αυτόματα όταν ο server επιβεβαιώνει πόντους
+        function checkIncomingKarma() {
+            fetch(`${API_BASE_URL}/get-karma?user_id=${deviceID}`)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.karma !== undefined && data.karma !== userKarma) {
+                        let diff = data.karma - userKarma;
+                        userKarma = data.karma;
+                        updateKarmaDisplay();
+                        if(diff > 0) alert(`🎉 Κάποιος χρησιμοποίησε τη θέση σου! Κέρδισες +${diff} Karma!`);
+                    }
+                }).catch(e => console.log("Karma sync pending server updates"));
         }
-
 
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
         function openModal(id) { document.getElementById(id).style.display = 'block'; toggleMenu(); }
@@ -238,18 +231,17 @@
         function saveClickedLocation() { let pos = lastClickedMarker.getLatLng(); localStorage.setItem('savedLat', pos.lat); localStorage.setItem('savedLng', pos.lng); savedPosition = pos; showSavedMarker(); alert("Η θέση αποθηκεύτηκε!"); lastClickedMarker.closePopup(); }
 
         async function sendToServer(lat, lng, mins, photo) {
-            // ΝΕΟ: Αντί για user_id: 1 στέλνουμε το string του ID μας (π.χ. 'user_12345')
-            // Προς το παρόν, αφήνουμε το '1' για να μην σπάσει ο Python Server, αλλά στο μέλλον θα περνάμε το deviceID
-            await fetch(`${API_BASE_URL}/free-spot`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: 1, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo}) });
-            
-            // ΝΕΟ: Ανεβάζουμε το Karma κατά 10 πόντους με κάθε επιτυχημένη δημοσίευση!
-            addKarma(10);
-            
+            // Στέλνουμε το αληθινό deviceID πλέον στον server
+            await fetch(`${API_BASE_URL}/free-spot`, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({user_id: parseInt(deviceID), latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo}) 
+            });
             map.closePopup(); loadSpots();
         }
 
         async function loadSpots() {
-            let res = await fetch(`${API_BASE_URL}/search-spots?user_id=1`);
+            let res = await fetch(`${API_BASE_URL}/search-spots?user_id=${deviceID}`);
             let data = await res.json();
             markers.forEach(m => map.removeLayer(m)); markers = [];
             data.spots.forEach(spot => {
@@ -266,9 +258,17 @@
             });
         }
 
-        async function occupySpot(id) { await fetch(`${API_BASE_URL}/occupy-spot/${id}`, { method: 'DELETE' }); loadSpots(); }
+        async function occupySpot(id) { 
+            // Στέλνουμε το ποιος πατάει το κουμπί μέσω query parameter (?by_user=...)
+            await fetch(`${API_BASE_URL}/occupy-spot/${id}?by_user=${deviceID}`, { method: 'DELETE' }); 
+            loadSpots();
+            // Έλεγχος αν πήραμε Karma
+            setTimeout(checkIncomingKarma, 1000);
+        }
 
-        loadSavedPosition(); showSavedMarker(); resetUserMarker(); loadSpots(); setInterval(loadSpots, 5000);
+        loadSavedPosition(); showSavedMarker(); resetUserMarker(); loadSpots(); 
+        setInterval(loadSpots, 5000);
+        setInterval(checkIncomingKarma, 10000); // Έλεγχος για πόντους κάθε 10 δευτερόλεπτα
     </script>
 </body>
 </html>
