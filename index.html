@@ -156,16 +156,36 @@
             userMarker.closePopup();
         }
 
-        function submitPosition(isUserMarker) {
-            const file = document.getElementById(isUserMarker ? 'photoInput' : 'clickPhotoInput').files[0];
-            const pos = isUserMarker ? userMarker.getLatLng() : lastClickedLatLng;
+       function submitPosition(isUserMarker) {
+            // Βρίσκουμε το σωστό marker και το σωστό input
+            let pos;
+            let fileInput;
+
+            if (isUserMarker) {
+                pos = userMarker.getLatLng();
+                fileInput = document.getElementById('photoInput');
+            } else {
+                if (!lastClickedMarker) return;
+                pos = lastClickedMarker.getLatLng();
+                fileInput = document.getElementById('clickPhotoInput');
+            }
+
+            const file = fileInput.files[0];
             let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
+            
             if (mins) {
                 if (file) {
                     const reader = new FileReader();
-                    reader.onloadend = () => sendToServer(pos.lat, pos.lng, mins, reader.result);
+                    reader.onloadend = () => {
+                        sendToServer(pos.lat, pos.lng, mins, reader.result);
+                        // Αν είναι το clicked marker, το αφαιρούμε μετά την επιτυχή αποστολή
+                        if (!isUserMarker) cancelClickedMarker();
+                    };
                     reader.readAsDataURL(file);
-                } else { sendToServer(pos.lat, pos.lng, mins, null); }
+                } else { 
+                    sendToServer(pos.lat, pos.lng, mins, null);
+                    if (!isUserMarker) cancelClickedMarker();
+                }
             }
         }
 
