@@ -25,9 +25,9 @@
             100% { transform: translate(-100%, 0); }
         }
         
-        /* Container για τα κουμπιά - Επαναφορά αριστερά όπως στο IMG_7063.jpeg */
+        /* Container για τα κουμπιά - ΔΙΟΡΘΩΜΕΝΟ: Δεξιά πλευρά */
         .controls-container {
-            position: absolute; top: 60px; left: 10px; z-index: 1000;
+            position: absolute; top: 60px; right: 10px; left: auto; z-index: 1000;
             display: flex; flex-direction: column; gap: 10px;
         }
         .menu-btn, .my-location-btn {
@@ -61,13 +61,11 @@
         </div>
     </div>
 
-    <!-- Container για τα κουμπιά (αριστερά) -->
     <div class="controls-container">
         <div class="menu-btn" onclick="toggleMenu()">☰ Μενού</div>
         <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
     </div>
 
-    <!-- Μενού Overlay -->
     <div id="menu-overlay">
         <div class="close-menu" onclick="toggleMenu()">✖ Κλείσιμο</div>
         <h2>Μενού</h2>
@@ -287,41 +285,3 @@
                     });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
-                    markers.push(marker);
-                }
-            });
-        }
-
-        async function occupySpot(id) {
-            await fetch(`${API_BASE_URL}/occupy-spot/${id}`, { method: 'DELETE' });
-            loadSpots();
-        }
-
-        function resizeAndCompress(file, callback) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800;
-                    const scaleSize = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
-                    canvas.height = img.height * scaleSize;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    callback(canvas.toDataURL('image/jpeg', 0.7));
-                };
-            };
-        }
-
-        loadSavedPosition();
-        showSavedMarker();
-        resetUserMarker();
-        loadSpots();
-        setInterval(loadSpots, 5000);
-    </script>
-</body>
-</html>
