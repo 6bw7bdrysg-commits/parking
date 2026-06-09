@@ -40,10 +40,30 @@
         .occupy-btn { background-color: #dc3545; color: white; }
         .save-btn { background-color: #ffc107; color: black; }
         .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
+        .menu-btn {
+            position: absolute; top: 10px; left: 10px; z-index: 2000;
+            background: white; padding: 10px 15px; border-radius: 5px;
+            cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        #menu-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95); z-index: 3000; padding: 20px; box-sizing: border-box;
+        }
+        .close-menu { cursor: pointer; color: red; font-size: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="marquee-container">
+        <div class="menu-btn" onclick="toggleMenu()">☰ Μενού</div>
+    <div id="menu-overlay">
+        <div class="close-menu" onclick="toggleMenu()">✖ Κλείσιμο</div>
+        <h2>Μενού</h2>
+        <ul>
+            <li onclick="alert('Οδηγίες: Κάνε κλικ στον χάρτη για να ορίσεις θέση, ή πάτα Επαναφορά μου.')">Οδηγίες Χρήσης</li>
+            <li onclick="alert('Koinon Parking - Μια κοινότητα για ευκολότερο πάρκινγκ!')">Σχετικά με εμάς</li>
+            <li onclick="alert('Όροι: Χρησιμοποιήστε την εφαρμογή με υπευθυνότητα.')">Όροι Χρήσης</li>
+        </ul>
+    </div>
         <div class="marquee-text">
             ⚠️ Προσοχή: Η διαθεσιμότητα των θέσεων δεν είναι εγγυημένη 100%! | Δημοσιεύστε μια θέση που αδειάζει | Βοηθήστε την κοινότητα!
         </div>
@@ -291,6 +311,10 @@ var lastClickedMarker = null; // Προσθήκη μεταβλητής για τ
                     callback(canvas.toDataURL('image/jpeg', 0.7));
                 };
             };
+        }
+        function toggleMenu() {
+            const menu = document.getElementById('menu-overlay');
+            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
         }
 
         loadSavedPosition();
