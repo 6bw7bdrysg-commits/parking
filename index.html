@@ -70,6 +70,7 @@
         function showSavedMarker() {
             if (savedPosition) {
                 if (savedMarker) map.removeLayer(savedMarker);
+
                 let popupContent = `
                     <div style="text-align:center;">
                         <b>Αποθηκευμένη θέση</b><br>
@@ -77,9 +78,11 @@
                         <button class="btn-action" onclick="submitSavedWithPhoto()">📢 Δημοσίευσε Τώρα</button>
                         <button class="occupy-btn" onclick="deleteSavedMarker()">🗑️ Διαγραφή</button>
                     </div>`;
+                
+                // Χρησιμοποιούμε κίτρινη πινέζα για την αποθηκευμένη
                 savedMarker = L.marker([savedPosition.lat, savedPosition.lng], {
                     icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
                         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                         iconSize: [25, 41], iconAnchor: [12, 41]
                     })
