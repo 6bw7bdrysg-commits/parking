@@ -7,9 +7,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
-        #map { height: 100vh; width: 100vw; }
-        .cancel-btn { background-color: #6c757d; color: white; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: sans-serif; }
+        #map { height: 100%; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
         .marquee-container {
             position: absolute; top: 0; left: 0; width: 100%;
             background: rgba(0, 0, 0, 0.8); color: white;
@@ -25,9 +24,9 @@
             100% { transform: translate(-100%, 0); }
         }
         
-        /* Container για τα κουμπιά - ΔΙΟΡΘΩΜΕΝΟ: Δεξιά πλευρά */
+        /* Container για τα κουμπιά - Δεξιά πλευρά */
         .controls-container {
-            position: absolute; top: 60px; right: 10px; left: auto; z-index: 1000;
+            position: absolute; top: 60px; right: 10px; z-index: 1000;
             display: flex; flex-direction: column; gap: 10px;
         }
         .menu-btn, .my-location-btn {
@@ -80,7 +79,9 @@
     
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
+        // Αρχικοποίηση χάρτη
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
+        
         var savedPosition = null;
         var markers = [];
         var userMarker = null;
@@ -285,3 +286,23 @@
                     });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
+                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
+                    markers.push(marker);
+                }
+            });
+        }
+
+        async function occupySpot(id) {
+            await fetch(`${API_BASE_URL}/occupy-spot/${id}`, { method: 'DELETE' });
+            loadSpots();
+        }
+
+        // Τελικές εντολές
+        loadSavedPosition();
+        showSavedMarker();
+        resetUserMarker();
+        loadSpots();
+        setInterval(loadSpots, 5000);
+    </script>
+</body>
+</html>
