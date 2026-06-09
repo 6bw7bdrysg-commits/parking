@@ -9,6 +9,16 @@
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100%; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        /* Αφαίρεση λευκού πλαισίου από τα popups */
+        .leaflet-popup-content-wrapper {
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        .leaflet-popup-tip { display: none !important; }
+        .leaflet-container a.leaflet-popup-close-button { display: none !important; }
+
         .marquee-container {
             position: absolute; top: 0; left: 0; width: 100%;
             background: rgba(0, 0, 0, 0.8); color: white;
@@ -36,13 +46,12 @@
         
         #menu-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 250px; height: 100%;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(8px);
             z-index: 3000; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.3);
         }
         .close-menu { cursor: pointer; color: red; font-size: 20px; font-weight: bold; margin-bottom: 20px; }
 
-        /* Modal Styles */
         .modal {
             display: none; position: fixed; top: 10%; left: 10%; width: 80%; height: 80%;
             background: rgba(255, 255, 255, 0.95);
@@ -88,22 +97,20 @@
     <div id="instructions-modal" class="modal">
         <h2 style="color:#007bff;">Οδηγίες Χρήσης</h2>
         <p>Καλώς ήρθες στο <b>Koinon Parking</b>!<br>Η εφαρμογή που κάνει το παρκάρισμα στην πόλη, ομαδικό άθλημα.</p>
-        <h3>1. Βρίσκεις πάρκινγκ σε δευτερόλεπτα</h3>
-        <p>Μην γυρνάς άσκοπα! Κοίτα τον χάρτη:<br>
+        <h3>Τι μπορείς να κάνεις εδώ;</h3>
+        <p><b>1. Βρίσκεις πάρκινγκ σε δευτερόλεπτα</b><br>Μην γυρνάς άσκοπα! Κοίτα τον χάρτη:<br>
         • <b>Πράσινο 🟢:</b> Μια θέση μόλις άδειασε – πρόλαβε την!<br>
         • <b>Κόκκινο 🔴:</b> Η θέση είναι στα "τελευταία της" – αν είσαι κοντά, είναι δική σου.<br>
         Πάτα πάνω στη θέση και διάλεξε "Οδηγίες" για να σε πάει το GPS απευθείας εκεί.</p>
-        <h3>2. Γίνεσαι μέλος μιας μεγάλης παρέας</h3>
-        <p>Όταν φεύγεις από μια θέση, μην την αφήνεις να πάει χαμένη!<br>
+        <p><b>2. Γίνεσαι μέλος μιας μεγάλης παρέας</b><br>Όταν φεύγεις από μια θέση, μην την αφήνεις να πάει χαμένη!<br>
         • Πάτα "Δημοσίευσε" και ενημέρωσε τους υπόλοιπους ότι αδειάζεις.<br>
         • Αν βγάλεις μια φωτογραφία, βοηθάς τους άλλους να αναγνωρίσουν τη θέση αμέσως.<br>
         Με κάθε δημοσίευσή σου, κάποιος άλλος γλιτώνει πολύτιμο χρόνο!</p>
-        <h3>3. Προγραμματίζεις την αναχώρησή σου (Smart Planning)</h3>
-        <p>Είσαι κάπου και ξέρεις ότι θα φύγεις σε λίγη ώρα;<br>
-        • Πάτα "Αποθήκευση θέσης" μόλις παρκάρεις. Η θέση αποθηκεύεται με χρυσό χρώμα 🟡.<br>
-        • Λίγα λεπτά πριν ξεκινήσεις, πάτα τη χρυσή θέση και επίλεξε "Δημοσίευσε".<br>
-        Έτσι, οι οδηγοί γύρω σου θα δουν τη θέση να "κοκκινίζει" τη στιγμή που βγαίνεις!</p>
-        <p><b>Με λίγα λόγια:</b> Είδες ελεύθερο; Πήγαινε. Φεύγεις; Ενημέρωσε!</p>
+        <p><b>3. Προγραμματίζεις την αναχώρησή σου (Smart Planning)</b><br>Είσαι κάπου (σπίτι, καφέ, δουλειά) και ξέρεις ότι θα φύγεις σε λίγη ώρα;<br>
+        • Πάτα "Αποθήκευση θέσης" μόλις παρκάρεις. Η θέση αποθηκεύεται με χρυσό χρώμα 🟡 για να την έχεις έτοιμη.<br>
+        • Λίγα λεπτά πριν ξεκινήσεις, άνοιξε την εφαρμογή, πάτα τη χρυσή θέση και επίλεξε "Δημοσίευσε".<br>
+        Έτσι, οι οδηγοί γύρω σου θα δουν τη θέση να "κοκκινίζει" ακριβώς τη στιγμή που ετοιμάζεσαι να βγεις!</p>
+        <p><b>Με λίγα λόγια:</b> Είδες ελεύθερο; Πήγαινε. Φεύγεις από κάπου; Ενημέρωσε την κοινότητα. Βοηθάς εσένα, βοηθάς τους γείτονές σου!</p>
         <button class="close-modal" onclick="closeModal('instructions-modal')">Κλείσιμο</button>
     </div>
 
@@ -112,17 +119,16 @@
         <p>Το <b>Koinon Parking</b> ξεκίνησε από μια απλή, καθημερινή αφορμή: την ταλαιπωρία όλων μας να βρούμε μια θέση πάρκινγκ στην πόλη.</p>
         <p>Σκεφτήκαμε πως αν αντί να ψάχνουμε μόνοι μας, γινόμασταν όλοι μαζί ένας "ζωντανός χάρτης", η ζωή μας θα γινόταν πιο εύκολη, λιγότερο αγχωτική και η πόλη μας πιο φιλική.</p>
         <p><b>Το όραμά μας:</b> Να γίνει το Koinon Parking ο καλύτερος βοηθός σου στις καθημερινές διαδρομές.</p>
-        <p><b>Το μέλλον:</b> Αυτή είναι μόνο η αρχή! Σύντομα θα προσθέσουμε στοιχεία επικοινωνίας για να μας στέλνεις τις ιδέες σου, ώστε να χτίσουμε μαζί την εφαρμογή που όλοι χρειαζόμαστε.</p>
-        <p>Σας ευχαριστούμε που είστε μέρος αυτής της προσπάθειας!</p>
+        <p><b>Το μέλλον:</b> Σύντομα θα προσθέσουμε στοιχεία επικοινωνίας για να μας στέλνεις τις ιδέες σου!</p>
         <button class="close-modal" onclick="closeModal('about-modal')">Κλείσιμο</button>
     </div>
 
     <div id="terms-modal" class="modal">
-        <h2 style="color:#dc3545;">📜 Όροι Χρήσης & Αποποίηση Ευθύνης</h2>
-        <p>• <b>Ενημερωτικός χαρακτήρας:</b> Το Koinon Parking βασίζεται αποκλειστικά σε πληροφορίες χρηστών. Δεν εγγυάται τη διαθεσιμότητα θέσεων.</p>
-        <p>• <b>Αποποίηση Ευθύνης:</b> Δεν φέρουμε καμία ευθύνη για ατυχήματα, ζημιές, κλήσεις τροχαίας ή ανακρίβειες στις πληροφορίες των χρηστών.</p>
-        <p>• <b>Υπεύθυνη χρήση:</b> Απαγορεύεται η δημοσίευση ψευδών δεδομένων. Ο χρήστης είναι αποκλειστικά υπεύθυνος για τη νομιμότητα των ενεργειών του.</p>
-        <p>• <b>Ιδιωτικότητα:</b> Δεν συλλέγουμε προσωπικά δεδομένα πέρα από την τοποθεσία που εσύ επιλέγεις να μοιραστείς.</p>
+        <h2 style="color:#dc3545;">📜 Όροι Χρήσης</h2>
+        <p>• <b>Ενημερωτικός χαρακτήρας:</b> Δεν εγγυόμαστε τη διαθεσιμότητα θέσεων.</p>
+        <p>• <b>Αποποίηση Ευθύνης:</b> Δεν φέρουμε καμία ευθύνη για ζημιές ή κλήσεις τροχαίας.</p>
+        <p>• <b>Υπεύθυνη χρήση:</b> Απαγορεύεται η δημοσίευση ψευδών δεδομένων.</p>
+        <p>• <b>Ιδιωτικότητα:</b> Χρησιμοποιούμε μόνο την τοποθεσία που εσύ μοιράζεσαι.</p>
         <button class="close-modal" onclick="closeModal('terms-modal')">Κατανοητό</button>
     </div>
 
@@ -145,7 +151,7 @@
         function showSavedMarker() {
             if (savedPosition) {
                 if (savedMarker) map.removeLayer(savedMarker);
-                let popupContent = `<div style="text-align:center;"><b>Αποθηκευμένη θέση</b><br><input type="file" id="savedPhotoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitSavedWithPhoto()">📢 Δημοσίευσε Τώρα</button><button class="occupy-btn" onclick="deleteSavedMarker()">🗑️ Διαγραφή</button></div>`;
+                let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);"><b>Αποθηκευμένη θέση</b><br><input type="file" id="savedPhotoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitSavedWithPhoto()">📢 Δημοσίευσε</button><button class="occupy-btn" onclick="deleteSavedMarker()">🗑️ Διαγραφή</button></div>`;
                 savedMarker = L.marker([savedPosition.lat, savedPosition.lng], { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] }) }).addTo(map).bindPopup(popupContent);
             }
         }
@@ -170,7 +176,7 @@
                 navigator.geolocation.getCurrentPosition((pos) => {
                     const lat = pos.coords.latitude; const lng = pos.coords.longitude;
                     if (userMarker) userMarker.setLatLng([lat, lng]); else userMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
-                    userMarker.bindPopup(`<div style="text-align:center;"><b>Είσαι εδώ!</b><br><button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση θέσης</button><input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε Τώρα</button></div>`).openPopup();
+                    userMarker.bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);"><b>Είσαι εδώ!</b><br><button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση</button><input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>`).openPopup();
                     map.setView([lat, lng], 17);
                 }, null, { enableHighAccuracy: true });
             }
@@ -200,7 +206,7 @@
         map.on('click', function(e) {
             if (lastClickedMarker) map.removeLayer(lastClickedMarker);
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
-            let popupContent = `<div style="text-align:center; width: 180px;"><b>Νέα θέση</b><br><button class="save-btn" style="margin-top:5px; width:100%;" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br><input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br><button class="btn-action" style="margin-top:5px; width:100%;" onclick="submitPosition(false)">📢 Δημοσίευσε</button><button class="occupy-btn" style="margin-top:5px; width:100%;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button></div>`;
+            let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width: 180px;"><b>Νέα θέση</b><br><button class="save-btn" style="margin-top:5px; width:100%;" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br><input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br><button class="btn-action" style="margin-top:5px; width:100%;" onclick="submitPosition(false)">📢 Δημοσίευσε</button><button class="occupy-btn" style="margin-top:5px; width:100%;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button></div>`;
             lastClickedMarker.bindPopup(popupContent).openPopup();
             lastClickedMarker.bringToFront();
             L.DomEvent.disableClickPropagation(lastClickedMarker._popup._container);
@@ -223,10 +229,10 @@
                 let remaining = spot.minutes_until_free - Math.floor((new Date() - created) / 60000);
                 if (remaining > 0) {
                     let color = remaining <= 3 ? 'red' : 'green';
-                    let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/leaflet/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+                    let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button>`);
+                        .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id})">❌ Κατειλημμένη</button></div>`);
                     markers.push(marker);
                 }
             });
