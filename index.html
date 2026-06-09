@@ -9,7 +9,7 @@
     <style>
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100vh; width: 100vw; }
-        
+        .cancel-btn { background-color: #6c757d; color: white; }
         .marquee-container {
             position: absolute; top: 0; left: 0; width: 100%;
             background: rgba(0, 0, 0, 0.8); color: white;
@@ -180,12 +180,19 @@ var lastClickedMarker = null; // Προσθήκη μεταβλητής για τ
                 <div style="text-align:center;"><b>Νέα θέση</b><br>
                 <button class="save-btn" onclick="saveClickedLocation()">💾 Αποθήκευση θέσης</button>
                 <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:5px 0;">
-                <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button></div>
+                <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button>
+                <button class="cancel-btn" onclick="cancelClickedMarker()">✖️ Ακύρωση</button></div>
             `;
             
             lastClickedMarker.bindPopup(popupContent).openPopup();
             lastClickedMarker.bringToFront();
         });
+
+        function cancelClickedMarker() {
+            if (lastClickedMarker) map.removeLayer(lastClickedMarker);
+            lastClickedMarker = null;
+            map.closePopup();
+        }
 
         // Προσθήκη της συνάρτησης αποθήκευσης για το κλικ
         function saveClickedLocation() {
