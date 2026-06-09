@@ -73,6 +73,30 @@
     </style>
 </head>
 <body>
+
+    <div id="auth-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 5000; display: flex; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 85%; max-width: 400px; box-sizing: border-box;">
+            <h2 id="auth-title" style="text-align: center; color: #007bff; margin-bottom: 20px; margin-top: 0;">Είσοδος στο ParkKarma</h2>
+            
+            <div id="auth-form">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Email</label>
+                <input type="email" id="auth-email" placeholder="name@example.com" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px;">
+                
+                <label id="password-label" style="font-weight: bold; display: block; margin-bottom: 5px;">Κωδικός Πρόσβασης</label>
+                <input type="password" id="auth-password" placeholder="******" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px;">
+                
+                <button class="nav-btn" id="auth-submit-btn" onclick="handleAuthSubmit()">Σύνδεση</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; font-size: 14px;">
+                <span id="auth-toggle-text">Δεν έχετε λογαριασμό;</span> 
+                <a href="#" id="auth-toggle-link" onclick="toggleAuthMode()" style="color: #007bff; font-weight: bold; text-decoration: none;">Δημιουργία λογαριασμού</a>
+                <br><br>
+                <a href="#" id="forgot-password-link" onclick="showForgotPasswordMode()" style="color: #6c757d; text-decoration: none;">Ξέχασα τον κωδικό μου</a>
+            </div>
+        </div>
+    </div>
+
     <div class="marquee-container">
         <div class="marquee-text">
             ⚠️ Προσοχή: Η διαθεσιμότητα των θέσεων δεν είναι εγγυημένη 100%! | Δημοσιεύστε μια θέση που αδειάζει | Βοηθήστε την κοινότητα!
@@ -91,6 +115,7 @@
             <li onclick="openModal('instructions-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">ℹ️ Οδηγίες Χρήσης</li>
             <li onclick="openModal('about-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">👥 Σχετικά με εμάς</li>
             <li onclick="openModal('terms-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">📜 Όροι Χρήσης</li>
+            <li onclick="handleLogout()" style="padding:15px 0; color: red; font-weight: bold; cursor:pointer;">🚪 Αποσύνδεση</li>
         </ul>
     </div>
 
@@ -125,20 +150,15 @@
 
     <div id="terms-modal" class="modal">
         <h2 style="color:#dc3545;">📜 Όροι Χρήσης & Αποποίηση Ευθύνης</h2>
-        
         <p><b>Ενημερωτικός χαρακτήρας:</b> Το ParkKarma είναι μια εφαρμογή που βασίζεται αποκλειστικά στις πληροφορίες που παρέχουν οι χρήστες. Η εφαρμογή δεν εγγυάται τη διαθεσιμότητα καμίας θέσης στάθμευσης.</p>
-        
         <p><b>Αποποίηση Ευθύνης:</b> Οι δημιουργοί της εφαρμογής δεν φέρουν καμία ευθύνη για:</p>
         <ul style="padding-left: 20px;">
             <li>Τυχόν ατυχήματα ή ζημιές κατά τη διάρκεια της στάθμευσης.</li>
             <li>Κλήσεις της τροχαίας ή πρόστιμα που ενδέχεται να προκύψουν.</li>
             <li>Ανακρίβειες στις πληροφορίες που δημοσιεύουν άλλοι χρήστες (π.χ. αν μια θέση τελικά δεν είναι ελεύθερη).</li>
         </ul>
-        
         <p><b>Υπεύθυνη χρήση:</b> Απαγορεύεται η δημοσίευση ψευδών δεδομένων ή κακόβουλου περιεχομένου. Ο χρήστης είναι αποκλειστικά υπεύθυνος για τη νομιμότητα των ενεργειών του (π.χ. σεβασμός του ΚΟΚ, στάθμευση σε επιτρεπόμενα σημεία).</p>
-        
         <p><b>Ιδιωτικότητα:</b> Η εφαρμογή δεν συλλέγει προσωπικά δεδομένα πέρα από την τοποθεσία που εσύ επιλέγεις να μοιραστείς. Χρησιμοποιείς την εφαρμογή με δική σου ευθύνη.</p>
-        
         <button class="close-modal" onclick="closeModal('terms-modal')">Κατανοητό</button>
     </div>
 
@@ -147,17 +167,110 @@
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
-        
         var savedPosition = null, markers = [], userMarker = null, savedMarker = null, lastClickedMarker = null;
+        let deviceID = localStorage.getItem('parkkarma_user_id');
+        let authMode = "login";
 
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
         function openModal(id) { document.getElementById(id).style.display = 'block'; toggleMenu(); }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri', maxZoom: 19 }).addTo(map);
-
         window.addEventListener('resize', () => map.invalidateSize());
 
+        // --- AUTHENTICATION LOGIC ---
+        function toggleAuthMode() {
+            const title = document.getElementById('auth-title');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const toggleLink = document.getElementById('auth-toggle-link');
+            const passwordLabel = document.getElementById('password-label');
+            const passwordInput = document.getElementById('auth-password');
+            const forgotLink = document.getElementById('forgot-password-link');
+
+            passwordLabel.style.display = "block";
+            passwordInput.style.display = "block";
+            forgotLink.style.display = "block";
+
+            if (authMode === "login" || authMode === "forgot") {
+                authMode = "register";
+                title.innerText = "Δημιουργία Λογαριασμού";
+                submitBtn.innerText = "Εγγραφή";
+                toggleText.innerText = "Έχετε ήδη λογαριασμό;";
+                toggleLink.innerText = "Σύνδεση";
+            } else {
+                authMode = "login";
+                title.innerText = "Είσοδος στο ParkKarma";
+                submitBtn.innerText = "Σύνδεση";
+                toggleText.innerText = "Δεν έχετε λογαριασμό;";
+                toggleLink.innerText = "Δημιουργία λογαριασμού";
+            }
+        }
+
+        function showForgotPasswordMode() {
+            authMode = "forgot";
+            document.getElementById('auth-title').innerText = "Επαναφορά Κωδικού";
+            document.getElementById('auth-submit-btn').innerText = "Αποστολή Οδηγιών";
+            document.getElementById('password-label').style.display = "none";
+            document.getElementById('auth-password').style.display = "none";
+            document.getElementById('forgot-password-link').style.display = "none";
+            document.getElementById('auth-toggle-text').innerText = "Θυμηθήκατε τον κωδικό σας;";
+            document.getElementById('auth-toggle-link').innerText = "Σύνδεση";
+        }
+
+        async function handleAuthSubmit() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            if (!email) { alert("Παρακαλώ συμπληρώστε το email."); return; }
+            if (authMode !== "forgot" && !password) { alert("Παρακαλώ συμπληρώστε τον κωδικό."); return; }
+
+            if (authMode === "register") {
+                let res = await fetch(`${API_BASE_URL}/register`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: email, password: password })
+                });
+                let data = await res.json();
+                if (res.ok) {
+                    alert("Η εγγραφή έγινε επιτυχώς! Μπορείτε να συνδεθείτε.");
+                    toggleAuthMode();
+                } else { alert(data.error || "Σφάλμα κατά την εγγραφή."); }
+                
+            } else if (authMode === "login") {
+                let res = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: email, password: password })
+                });
+                let data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('parkkarma_user_id', data.user_id);
+                    deviceID = data.user_id;
+                    document.getElementById('auth-container').style.display = "none";
+                    initializeApp();
+                } else { alert(data.error || "Λάθος στοιχεία σύνδεσης."); }
+
+            } else if (authMode === "forgot") {
+                let res = await fetch(`${API_BASE_URL}/reset-password-request`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: email })
+                });
+                let data = await res.json();
+                if (res.ok) {
+                    alert("Οι οδηγίες επαναφοράς στάλθηκαν στο email σας!");
+                    toggleAuthMode();
+                } else { alert(data.error || "Δεν βρέθηκε λογαριασμός."); }
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('parkkarma_user_id');
+            location.reload();
+        }
+
+        // --- MAP & APPLICATION FUNCTIONS ---
         function showSavedMarker() {
             if (savedPosition) {
                 if (savedMarker) map.removeLayer(savedMarker);
@@ -226,12 +339,16 @@
         function saveClickedLocation() { let pos = lastClickedMarker.getLatLng(); localStorage.setItem('savedLat', pos.lat); localStorage.setItem('savedLng', pos.lng); savedPosition = pos; showSavedMarker(); alert("Η θέση αποθηκεύτηκε!"); lastClickedMarker.closePopup(); }
 
         async function sendToServer(lat, lng, mins, photo) {
-            await fetch(`${API_BASE_URL}/free-spot`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: 1, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo}) });
+            await fetch(`${API_BASE_URL}/free-spot`, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({user_id: parseInt(deviceID), latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo}) 
+            });
             map.closePopup(); loadSpots();
         }
 
         async function loadSpots() {
-            let res = await fetch(`${API_BASE_URL}/search-spots?user_id=1`);
+            let res = await fetch(`${API_BASE_URL}/search-spots?user_id=${deviceID}`);
             let data = await res.json();
             markers.forEach(m => map.removeLayer(m)); markers = [];
             data.spots.forEach(spot => {
@@ -248,9 +365,26 @@
             });
         }
 
-        async function occupySpot(id) { await fetch(`${API_BASE_URL}/occupy-spot/${id}`, { method: 'DELETE' }); loadSpots(); }
+        async function occupySpot(id) { 
+            await fetch(`${API_BASE_URL}/occupy-spot/${id}?by_user=${deviceID}`, { method: 'DELETE' }); 
+            loadSpots(); 
+        }
 
-        loadSavedPosition(); showSavedMarker(); resetUserMarker(); loadSpots(); setInterval(loadSpots, 5000);
+        function initializeApp() {
+            loadSavedPosition(); 
+            showSavedMarker(); 
+            resetUserMarker(); 
+            loadSpots(); 
+            setInterval(loadSpots, 5000);
+        }
+
+        // --- INITIAL CHECK ---
+        if (deviceID) {
+            document.getElementById('auth-container').style.display = "none";
+            initializeApp();
+        } else {
+            document.getElementById('auth-container').style.display = "flex";
+        }
     </script>
 </body>
 </html>
