@@ -176,19 +176,22 @@ var lastClickedMarker = null; // Προσθήκη μεταβλητής για τ
             
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
             
-            // Δημιουργούμε το ID του input μοναδικό για να το βρίσκει σίγουρα
-            let popupContent = `
-                <div style="text-align:center;">
-                    <b>Νέα θέση</b><br>
-                    <button class="save-btn" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br>
-                    <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br>
-                    <button class="btn-action" onclick="submitPosition(false)">📢 Δημοσίευσε</button>
-                    <button class="occupy-btn" style="margin-top:5px;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button>
-                </div>
+            let popupContent = document.createElement('div');
+            popupContent.style.textAlign = 'center';
+            popupContent.innerHTML = `
+                <b>Νέα θέση</b><br>
+                <button class="save-btn" style="margin-top:5px; width:100%;" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br>
+                <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br>
+                <button class="btn-action" style="margin-top:5px; width:100%;" onclick="submitPosition(false)">📢 Δημοσίευσε</button>
+                <button class="occupy-btn" style="margin-top:5px; width:100%;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button>
             `;
             
-            lastClickedMarker.bindPopup(popupContent).openPopup();
+            lastClickedMarker.bindPopup(popupContent);
+            lastClickedMarker.openPopup();
             lastClickedMarker.bringToFront();
+
+            // ΤΟ ΚΛΕΙΔΙ: Απενεργοποίηση του click propagation για να "ακούν" τα κουμπιά
+            L.DomEvent.on(popupContent, 'mousedown dblclick', L.DomEvent.stopPropagation);
         });
 
         function cancelClickedMarker() {
