@@ -79,7 +79,7 @@ def read_root():
     return FileResponse(INDEX_FILE)
 
 
-# 1. ΕΓΓΡΑΦΗ ΜΕ ΚΩΔΙΚΟ ΕΠΙΒΕΒΑΙΩΣΗΣ
+# 1. ΕΓΓΡΑΦΗ ΜΕ ΑΠΟΣΤΟΛΗ ΚΩΔΙΚΟΥ ΕΠΙΒΕΒΑΙΩΣΗΣ
 @app.post("/register")
 def register(user: UserRegister, db: Session = Depends(get_db)):
     email_lower = user.email.strip().lower()
@@ -104,8 +104,24 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     
-    # Εδώ θα μπορούσες να προσθέσεις την αποστολή email με το v_code
-    return {"message": "Επιτυχής εγγραφή! Ελέγξτε το email σας για τον κωδικό επιβεβαίωσης.", "debug_code": v_code}
+    # ΑΠΟΣΤΟΛΗ EMAIL
+    try:
+        sender_email = "your-app-email@gmail.com" # ΑΛΛΑΞΕ ΤΟ
+        sender_password = "your-app-password"      # ΑΛΛΑΞΕ ΤΟ (App Password)
+        
+        msg = MIMEText(f"Ο κωδικός επιβεβαίωσης για το ParkKarma είναι: {v_code}")
+        msg['Subject'] = 'Επιβεβαίωση Εγγραφής - ParkKarma'
+        msg['From'] = sender_email
+        msg['To'] = email_lower
+        
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, email_lower, msg.as_string())
+    except Exception as e:
+        print(f"Σφάλμα αποστολής email: {e}")
+        return JSONResponse(status_code=500, content={"error": "Επιτυχής εγγραφή, αλλά απέτυχε η αποστολή email."})
+    
+    return {"message": "Επιτυχής εγγραφή! Ελέγξτε το email σας για τον κωδικό επιβεβαίωσης."}
 
 
 # 1.1 ΕΠΙΒΕΒΑΙΩΣΗ EMAIL
