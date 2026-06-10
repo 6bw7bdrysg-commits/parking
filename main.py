@@ -106,8 +106,8 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
     
     # ΑΠΟΣΤΟΛΗ EMAIL
     try:
-        sender_email = "your-app-email@gmail.com" # ΑΛΛΑΞΕ ΤΟ
-        sender_password = "your-app-password"      # ΑΛΛΑΞΕ ΤΟ (App Password)
+        sender_email = "your-app-email@gmail.com" # Βάλε εδώ το email σου
+        sender_password = "hrrnubzbfscvpjyv"      # Ο κωδικός σου χωρίς κενά
         
         msg = MIMEText(f"Ο κωδικός επιβεβαίωσης για το ParkKarma είναι: {v_code}")
         msg['Subject'] = 'Επιβεβαίωση Εγγραφής - ParkKarma'
@@ -161,7 +161,7 @@ def reset_password_request(req: PasswordReset, db: Session = Depends(get_db)):
     
     try:
         sender_email = "your-app-email@gmail.com" 
-        sender_password = "your-app-password"    
+        sender_password = "hrrnubzbfscvpjyv"    
         temporary_password = f"Park{datetime.datetime.now().strftime('%S%M')}"
         user.password_hash = generate_password_hash(temporary_password)
         db.commit()
