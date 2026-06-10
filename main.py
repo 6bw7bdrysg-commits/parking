@@ -65,7 +65,8 @@ class EmailVerification(BaseModel):
 @app.on_event("startup")
 def startup_event():
     db = SessionLocal()
-    if not db.query(models.DBUser).filter(models.DBUser.id == 1).first():
+    # Έλεγχος αν υπάρχει ο admin πριν την προσθήκη για να μην έχουμε conflicts
+    if not db.query(models.DBUser).filter(models.DBUser.email == "admin@parkkarma.com").first():
         default_password = generate_password_hash("123456")
         db.add(models.DBUser(id=1, email="admin@parkkarma.com", password_hash=default_password, is_verified=True))
         db.commit()
