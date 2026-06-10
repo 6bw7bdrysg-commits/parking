@@ -106,8 +106,8 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
     
     # ΑΠΟΣΤΟΛΗ EMAIL
     try:
-        sender_email = "your-app-email@gmail.com" # Βάλε εδώ το email σου
-        sender_password = "hrrnubzbfscvpjyv"      # Ο κωδικός σου χωρίς κενά
+        sender_email = "george@parkkarmaapp.com"
+        sender_password = "hrrnubzbfscvpjyv"
         
         msg = MIMEText(f"Ο κωδικός επιβεβαίωσης για το ParkKarma είναι: {v_code}")
         msg['Subject'] = 'Επιβεβαίωση Εγγραφής - ParkKarma'
@@ -160,8 +160,9 @@ def reset_password_request(req: PasswordReset, db: Session = Depends(get_db)):
         return JSONResponse(status_code=404, content={"error": "Δεν βρέθηκε λογαριασμός."})
     
     try:
-        sender_email = "your-app-email@gmail.com" 
-        sender_password = "hrrnubzbfscvpjyv"    
+        sender_email = "george@parkkarmaapp.com"
+        sender_password = "hrrnubzbfscvpjyv"
+        
         temporary_password = f"Park{datetime.datetime.now().strftime('%S%M')}"
         user.password_hash = generate_password_hash(temporary_password)
         db.commit()
@@ -177,7 +178,8 @@ def reset_password_request(req: PasswordReset, db: Session = Depends(get_db)):
             
         return {"message": "Το email επαναφοράς στάλθηκε!"}
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": "Αποτυχία αποστολής."})
+        print(f"Σφάλμα αποστολής email: {e}")
+        return JSONResponse(status_code=500, content={"error": "Αποτυχία αποστολής email."})
 
 
 # 4. ΔΗΜΙΟΥΡΓΙΑ ΘΕΣΗΣ
