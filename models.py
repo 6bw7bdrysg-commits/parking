@@ -10,6 +10,10 @@ class DBUser(Base):
     password_hash = Column(String, nullable=False)
     is_pro = Column(Boolean, default=False)
     karma_points = Column(Integer, default=0)
+    
+    # Πεδία για την επιβεβαίωση email
+    is_verified = Column(Boolean, default=False)
+    verification_code = Column(String, nullable=True)
 
 class DBParkingSpot(Base):
     __tablename__ = "parking_spots"
