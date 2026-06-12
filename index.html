@@ -140,23 +140,20 @@
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
-        var savedPosition = null, markers = [], userMarker = null, savedMarker = null, lastClickedMarker = null;
+        var savedPositions = [], markers = [], savedMarkers = [], userMarker = null, lastClickedMarker = null;
 
         let userEmail = localStorage.getItem('parkkarma_email') || null;
 
-        // Διαχείριση της απάντησης από το Google Login
+        // Διαχείριση Google Login με Πολλαπλές Θέσεις
         async function handleCredentialResponse(response) {
-            // Αν είχε αποθηκευμένη θέση τοπικά στο κινητό, τη στέλνουμε για Migration
-            let localLat = localStorage.getItem('savedLat');
-            let localLng = localStorage.getItem('savedLng');
+            let localSpots = JSON.parse(localStorage.getItem('parkkarma_saved_spots')) || [];
 
             let res = await fetch(`${API_BASE_URL}/auth/google`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
                     id_token: response.credential,
-                    local_lat: localLat ? parseFloat(localLat) : null,
-                    local_lng: localLng ? parseFloat(localLng) : null
+                    local_spots: localSpots
                 })
             });
             if (res.ok) {
@@ -164,18 +161,10 @@
                 userEmail = data.email;
                 localStorage.setItem('parkkarma_email', userEmail);
                 
-                // Αν έγινε επιτυχές migration, σβήνουμε τα τοπικά δεδομένα
-                if (localLat && localLng) {
-                    localStorage.removeItem('savedLat');
-                    localStorage.removeItem('savedLng');
-                }
+                localStorage.removeItem('parkkarma_saved_spots'); // Καθαρισμός τοπικής μνήμης
 
-                // Φόρτωση της πινέζας από το Cloud
-                if (data.saved_lat && data.saved_lng) {
-                    savedPosition = { lat: data.saved_lat, lng: data.saved_lng };
-                    showSavedMarker();
-                }
-
+                savedPositions = data.saved_locations || [];
+                showAllSavedMarkers();
                 updateUIForLoggedInUser(data.karma);
             }
         }
@@ -187,6 +176,7 @@
 
         function handleLogout() {
             localStorage.removeItem('parkkarma_email');
+            localStorage.removeItem('parkkarma_saved_spots');
             location.reload();
         }
 
@@ -197,27 +187,18 @@
                 if (res.ok) {
                     let data = await res.json();
                     document.getElementById('karma-points').innerText = `🌟 ${data.karma} Karma`;
-                    
-                    // Αν ο συνδεδεμένος χρήστης έχει σωσμένη θέση στη βάση, τη δείχνουμε
-                    if (data.saved_lat && data.saved_lng) {
-                        savedPosition = { lat: data.saved_lat, lng: data.saved_lng };
-                        showSavedMarker();
-                    }
+                    savedPositions = data.saved_locations || [];
+                    showAllSavedMarkers();
                 }
             } catch (e) { console.log("Σφάλμα σύνδεσης..."); }
         }
 
-        // Φόρτωση δεδομένων κατά το άνοιγμα της εφαρμογής
+        // Φόρτωση κατά το άνοιγμα
         if (userEmail) {
             setTimeout(() => { updateUIForLoggedInUser(0); fetchKarma(); }, 500);
         } else {
-            // Αν είναι ανώνυμος, φορτώνουμε από το localStorage
-            const lat = localStorage.getItem('savedLat');
-            const lng = localStorage.getItem('savedLng');
-            if (lat && lng) {
-                savedPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
-                showSavedMarker();
-            }
+            savedPositions = JSON.parse(localStorage.getItem('parkkarma_saved_spots')) || [];
+            setTimeout(showAllSavedMarkers, 500);
         }
 
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
@@ -227,38 +208,45 @@
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri', maxZoom: 19 }).addTo(map);
         window.addEventListener('resize', () => map.invalidateSize());
 
-        function showSavedMarker() {
-            if (savedPosition) {
-                if (savedMarker) map.removeLayer(savedMarker);
-                let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);"><b>Αποθηκευμένη θέση</b><br><input type="file" id="savedPhotoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitSavedWithPhoto()">📢 Δημοσίευσε</button><button class="occupy-btn" onclick="deleteSavedMarker()">🗑️ Διαγραφή</button></div>`;
-                savedMarker = L.marker([savedPosition.lat, savedPosition.lng], { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] }) }).addTo(map).bindPopup(popupContent);
-            }
+        // Εμφάνιση όλων των Χρυσών Πινεζών (έως 10) στον χάρτη
+        function showAllSavedMarkers() {
+            savedMarkers.forEach(m => map.removeLayer(m));
+            savedMarkers = [];
+            
+            savedPositions.forEach((spot, index) => {
+                let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);"><b>Αποθηκευμένη θέση #${index+1}</b><br><input type="file" id="savedPhotoInput_${index}" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitSavedWithPhoto(${index}, ${spot.lat}, ${spot.lng})">📢 Δημοσίευσε</button><button class="occupy-btn" onclick="deleteSavedMarker(${spot.id}, ${index})">🗑️ Διαγραφή</button></div>`;
+                
+                let marker = L.marker([spot.lat, spot.lng], { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] }) }).addTo(map).bindPopup(popupContent);
+                savedMarkers.push(marker);
+            });
         }
 
-        function submitSavedWithPhoto() {
-            const file = document.getElementById('savedPhotoInput').files[0];
+        function submitSavedWithPhoto(index, lat, lng) {
+            const file = document.getElementById(`savedPhotoInput_${index}`).files[0];
             let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
             if (mins) {
                 if (file) {
                     const reader = new FileReader();
-                    reader.onloadend = () => { sendToServer(savedPosition.lat, savedPosition.lng, mins, reader.result); deleteSavedMarker(); };
+                    reader.onloadend = () => { sendToServer(lat, lng, mins, reader.result); };
                     reader.readAsDataURL(file);
-                } else { sendToServer(savedPosition.lat, savedPosition.lng, mins, null); deleteSavedMarker(); }
+                } else { sendToServer(lat, lng, mins, null); }
             }
         }
 
-        // Διαγραφή Χρυσής Πινέζας (Τοπικά ή Cloud)
-        async function deleteSavedMarker() { 
-            if (userEmail) {
-                await fetch(`${API_BASE_URL}/delete-saved-location/${userEmail}`, { method: 'DELETE' });
-            } else {
-                localStorage.removeItem('savedLat'); 
-                localStorage.removeItem('savedLng'); 
+        // Διαγραφή συγκεκριμένης πινέζας
+        async function deleteSavedMarker(dbId, localIndex) { 
+            if (userEmail && dbId) {
+                await fetch(`${API_BASE_URL}/delete-saved-location/${dbId}`, { method: 'DELETE' });
             }
-            if (savedMarker) map.removeLayer(savedMarker); 
-            savedMarker = null; 
-            savedPosition = null; 
+            
+            // Αφαίρεση από τη λίστα
+            savedPositions.splice(localIndex, 1);
+            if (!userEmail) {
+                localStorage.setItem('parkkarma_saved_spots', JSON.stringify(savedPositions));
+            }
+            
             map.closePopup(); 
+            showAllSavedMarkers();
         }
 
         function resetUserMarker() {
@@ -272,23 +260,35 @@
             }
         }
 
-        // Αποθήκευση θέσης (Τοπικά ή Cloud)
         async function saveCurrentLocation() {
             let pos = userMarker.getLatLng();
+            if (savedPositions.length >= 10) {
+                alert("Έχεις φτάσει το μέγιστο όριο των 10 αποθηκευμένων θέσεων!");
+                return;
+            }
+
+            let newSpot = { lat: pos.lat, lng: pos.lng, id: null };
+            
             if (userEmail) {
-                // Αν είναι συνδεδεμένος, αποθηκεύεται απευθείας στη βάση
-                await fetch(`${API_BASE_URL}/save-location`, {
+                let res = await fetch(`${API_BASE_URL}/save-location`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: userEmail, latitude: pos.lat, longitude: pos.lng })
                 });
+                if (res.ok) {
+                    let data = await res.json();
+                    newSpot.id = data.id;
+                }
             } else {
-                // Αν είναι ανώνυμος, στο localStorage
-                localStorage.setItem('savedLat', pos.lat); 
-                localStorage.setItem('savedLng', pos.lng);
+                newSpot.id = Date.now(); // Προσωρινό ID για τους ανώνυμους
             }
-            savedPosition = pos; 
-            showSavedMarker(); 
+            
+            savedPositions.push(newSpot);
+            if (!userEmail) {
+                localStorage.setItem('parkkarma_saved_spots', JSON.stringify(savedPositions));
+            }
+            
+            showAllSavedMarkers(); 
             alert("Η θέση αποθηκεύτηκε!"); 
             userMarker.closePopup();
         }
@@ -355,16 +355,35 @@
                         alert("Μπορείς να αποθηκεύσεις μια θέση (Χρυσή Πινέζα) μόνο αν βρίσκεσαι εκεί (έως 60 μέτρα)!");
                         return;
                     }
+                    if (savedPositions.length >= 10) {
+                        alert("Έχεις φτάσει το μέγιστο όριο των 10 αποθηκευμένων θέσεων!");
+                        return;
+                    }
+
+                    let newSpot = { lat: pos.lat, lng: pos.lng, id: null };
+                    
                     if (userEmail) {
-                        await fetch(`${API_BASE_URL}/save-location`, {
+                        let res = await fetch(`${API_BASE_URL}/save-location`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email: userEmail, latitude: pos.lat, longitude: pos.lng })
                         });
+                        if (res.ok) {
+                            let data = await res.json();
+                            newSpot.id = data.id;
+                        }
                     } else {
-                        localStorage.setItem('savedLat', pos.lat); localStorage.setItem('savedLng', pos.lng); 
+                        newSpot.id = Date.now();
                     }
-                    savedPosition = pos; showSavedMarker(); alert("Η θέση αποθηκεύτηκε με επιτυχία!"); lastClickedMarker.closePopup();
+                    
+                    savedPositions.push(newSpot);
+                    if (!userEmail) {
+                        localStorage.setItem('parkkarma_saved_spots', JSON.stringify(savedPositions));
+                    }
+                    
+                    showAllSavedMarkers(); 
+                    alert("Η θέση αποθηκεύτηκε με επιτυχία!"); 
+                    lastClickedMarker.closePopup();
                 }, (err) => { alert("Πρέπει να δώσεις άδεια τοποθεσίας για να αποθηκεύσεις."); }, { enableHighAccuracy: true });
             } else { alert("Το κινητό σου δεν υποστηρίζει GPS."); }
         }
@@ -395,7 +414,7 @@
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('http://maps.google.com/?q=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Κατειλημμένη</button></div>`);
+                        .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Κατειλημμένη</button></div>`);
                     markers.push(marker);
                 }
             });
@@ -431,3 +450,5 @@
         setInterval(loadSpots, 5000);
         setInterval(fetchKarma, 10000);
     </script>
+</body>
+</html>
