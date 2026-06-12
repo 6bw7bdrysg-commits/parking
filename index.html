@@ -135,15 +135,12 @@
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
         var savedPosition = null, markers = [], userMarker = null, savedMarker = null, lastClickedMarker = null;
 
-        // Σύστημα Αναγνώρισης (ID) 
         let deviceID = localStorage.getItem('parkkarma_user_id');
         if (!deviceID) {
             deviceID = 'user_' + Math.random().toString(16).slice(2, 9);
             localStorage.setItem('parkkarma_user_id', deviceID);
         }
-        console.log("Device ID:", deviceID);
 
-        // Φόρτωση Karma από τον Server (όχι πια από το localStorage)
         let userKarma = 0;
         async function fetchKarma() {
             try {
@@ -205,8 +202,37 @@
 
         function submitPosition(isUserMarker) {
             let pos, fileInput;
-            if (isUserMarker) { pos = userMarker.getLatLng(); fileInput = document.getElementById('photoInput'); }
-            else { if (!lastClickedMarker) return; pos = lastClickedMarker.getLatLng(); fileInput = document.getElementById('clickPhotoInput'); }
+            
+            if (isUserMarker) { 
+                pos = userMarker.getLatLng(); 
+                fileInput = document.getElementById('photoInput'); 
+                processSubmission(pos, fileInput, isUserMarker);
+            } else { 
+                if (!lastClickedMarker) return; 
+                pos = lastClickedMarker.getLatLng(); 
+                fileInput = document.getElementById('clickPhotoInput'); 
+                
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((currentPos) => {
+                        let userLat = currentPos.coords.latitude;
+                        let userLng = currentPos.coords.longitude;
+                        let distance = L.latLng(userLat, userLng).distanceTo(L.latLng(pos.lat, pos.lng));
+
+                        if (distance > 60) {
+                            alert("Μπορείς να δημοσιεύσεις μια θέση μόνο αν βρίσκεσαι κοντά της (έως 60 μέτρα)!");
+                            return;
+                        }
+                        processSubmission(pos, fileInput, isUserMarker);
+                    }, (err) => {
+                        alert("Πρέπει να δώσεις άδεια τοποθεσίας (GPS) για να δημοσιεύσεις.");
+                    }, { enableHighAccuracy: true });
+                } else {
+                    alert("Το κινητό σου δεν υποστηρίζει GPS.");
+                }
+            }
+        }
+
+        function processSubmission(pos, fileInput, isUserMarker) {
             const file = fileInput.files[0];
             let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
             if (mins) {
@@ -228,10 +254,37 @@
         });
 
         function cancelClickedMarker() { if (lastClickedMarker) map.removeLayer(lastClickedMarker); lastClickedMarker = null; map.closePopup(); }
-        function saveClickedLocation() { let pos = lastClickedMarker.getLatLng(); localStorage.setItem('savedLat', pos.lat); localStorage.setItem('savedLng', pos.lng); savedPosition = pos; showSavedMarker(); alert("Η θέση αποθηκεύτηκε!"); lastClickedMarker.closePopup(); }
+        
+        // ΝΕΟ: Έλεγχος απόστασης κατά την αποθήκευση Χρυσής Πινέζας
+        function saveClickedLocation() { 
+            let pos = lastClickedMarker.getLatLng(); 
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((currentPos) => {
+                    let userLat = currentPos.coords.latitude;
+                    let userLng = currentPos.coords.longitude;
+                    let distance = L.latLng(userLat, userLng).distanceTo(L.latLng(pos.lat, pos.lng));
+
+                    if (distance > 60) {
+                        alert("Μπορείς να αποθηκεύσεις μια θέση (Χρυσή Πινέζα) μόνο αν βρίσκεσαι εκεί (έως 60 μέτρα)!");
+                        return;
+                    }
+                    
+                    localStorage.setItem('savedLat', pos.lat); 
+                    localStorage.setItem('savedLng', pos.lng); 
+                    savedPosition = pos; 
+                    showSavedMarker(); 
+                    alert("Η θέση αποθηκεύτηκε με επιτυχία!"); 
+                    lastClickedMarker.closePopup();
+                }, (err) => {
+                    alert("Πρέπει να δώσεις άδεια τοποθεσίας (GPS) για να αποθηκεύσεις.");
+                }, { enableHighAccuracy: true });
+            } else {
+                alert("Το κινητό σου δεν υποστηρίζει GPS.");
+            }
+        }
 
         async function sendToServer(lat, lng, mins, photo) {
-            // Στέλνουμε τη θέση στο server μαζί με το device_id μας
             await fetch(`${API_BASE_URL}/free-spot`, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
@@ -260,7 +313,6 @@
                     let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     
-                    // Περνάμε τα δεδομένα στο occupySpot & Διορθωμένο το URL του Google Maps
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
                         .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Κατειλημμένη</button></div>`);
                     markers.push(marker);
@@ -268,14 +320,12 @@
             });
         }
 
-        // Λογική ελέγχου απόστασης πριν την κατάληψη της θέσης
         async function occupySpot(spotId, spotLat, spotLng, creatorId) {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     let userLat = pos.coords.latitude;
                     let userLng = pos.coords.longitude;
                     
-                    // Υπολογισμός απόστασης (σε μέτρα) από την πινέζα
                     let distance = L.latLng(userLat, userLng).distanceTo(L.latLng(spotLat, spotLng));
 
                     if (distance > 60) {
@@ -289,7 +339,6 @@
                         alert("Μπράβο! Έπιασες τη θέση και ο οδηγός που την άφησε κέρδισε Karma.");
                     }
 
-                    // Στέλνουμε το αίτημα στο server για διαγραφή και απονομή Karma (αν χρειάζεται)
                     await fetch(`${API_BASE_URL}/occupy-spot/${spotId}?occupier_id=${deviceID}`, { method: 'DELETE' });
                     
                     map.closePopup();
@@ -309,7 +358,6 @@
         fetchKarma(); 
         loadSpots(); 
         
-        // Ανανέωση: Θέσεις κάθε 5 δευτερόλεπτα, Karma κάθε 10 δευτερόλεπτα
         setInterval(loadSpots, 5000);
         setInterval(fetchKarma, 10000);
     </script>
