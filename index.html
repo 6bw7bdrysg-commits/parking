@@ -332,8 +332,24 @@
             }
         }
 
+        // Έξυπνο κλικ για κλείσιμο popups/μενού πριν τη δημιουργία νέας θέσης
         map.on('click', function(e) {
-            if (lastClickedMarker) map.removeLayer(lastClickedMarker);
+            let menuOverlay = document.getElementById('menu-overlay');
+            let isMenuOpen = menuOverlay && menuOverlay.style.display === 'block';
+            let isPopupOpen = map._popup && map._popup._isOpen;
+
+            // Αν είναι ανοιχτό το μενού, κάποιο popup ή η προσωρινή πινέζα, απλά κλείστα!
+            if (isMenuOpen || isPopupOpen || lastClickedMarker) {
+                if (isMenuOpen) menuOverlay.style.display = 'none';
+                if (lastClickedMarker) {
+                    map.removeLayer(lastClickedMarker);
+                    lastClickedMarker = null;
+                }
+                map.closePopup();
+                return; // Σταματάει εδώ. Δεν ανοίγει νέο πινακάκι με το 1ο πάτημα.
+            }
+
+            // Δεύτερο πάτημα (αφού όλα είναι καθαρά): Ανοίγει το πινακάκι για νέα θέση
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
             let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width: 180px;"><b>Νέα θέση</b><br><button class="save-btn" style="margin-top:5px; width:100%;" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br><input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br><button class="btn-action" style="margin-top:5px; width:100%;" onclick="submitPosition(false)">📢 Δημοσίευσε</button><button class="occupy-btn" style="margin-top:5px; width:100%;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button></div>`;
             lastClickedMarker.bindPopup(popupContent).openPopup();
@@ -384,6 +400,7 @@
                     showAllSavedMarkers(); 
                     alert("Η θέση αποθηκεύτηκε με επιτυχία!"); 
                     lastClickedMarker.closePopup();
+                    lastClickedMarker = null; // Καθαρισμός μεταβλητής
                 }, (err) => { alert("Πρέπει να δώσεις άδεια τοποθεσίας για να αποθηκεύσεις."); }, { enableHighAccuracy: true });
             } else { alert("Το κινητό σου δεν υποστηρίζει GPS."); }
         }
@@ -413,6 +430,7 @@
                     let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     
+                    // Διορθωμένο URL για έναρξη πλοήγησης στους Χάρτες Google
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
                         .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Κατειλημμένη</button></div>`);
                     markers.push(marker);
