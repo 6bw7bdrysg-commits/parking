@@ -3,3 +3,4 @@ uvicorn
 sqlalchemy
 pydantic
 Werkzeug
+psycopg2-binary
