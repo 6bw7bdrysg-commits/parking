@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, timedelta, timezone
 import asyncio
 import requests
@@ -57,10 +57,13 @@ class ParkingSpotCreate(BaseModel):
     minutes_until_free: int
     photo: Optional[str] = None
 
+class LocalSpot(BaseModel):
+    lat: float
+    lng: float
+
 class TokenBody(BaseModel):
     id_token: str
-    local_lat: Optional[float] = None # Αν ο χρήστης είχε πινέζα στο κινητό του πριν το login
-    local_lng: Optional[float] = None
+    local_spots: Optional[List[LocalSpot]] = [] # Λίστα με τοπικές θέσεις για migration
 
 class SaveLocationBody(BaseModel):
     email: str
@@ -87,18 +90,24 @@ def google_auth(body: TokenBody, db: Session = Depends(get_db)):
             db.add(user)
             db.commit()
         
-        # ΜΕΤΑΦΟΡΑ ΔΕΔΟΜΕΝΩΝ: Αν είχε τοπική πινέζα και η βάση δεν έχει ήδη μία, τη σώζουμε στο cloud!
-        if body.local_lat and body.local_lng and user.saved_lat is None:
-            user.saved_lat = body.local_lat
-            user.saved_lng = body.local_lng
+        # ΜΕΤΑΦΟΡΑ ΔΕΔΟΜΕΝΩΝ: Μεταφορά των πολλαπλών τοπικών θέσεων στο Cloud (έως όριο 10)
+        current_saved_count = db.query(models.DBSavedLocation).filter(models.DBSavedLocation.user_email == email).count()
+        if body.local_spots:
+            for spot in body.local_spots:
+                if current_saved_count < 10:
+                    db.add(models.DBSavedLocation(user_email=email, latitude=spot.lat, longitude=spot.lng))
+                    current_saved_count += 1
             db.commit()
+            
+        # Παίρνουμε όλες τις αποθηκευμένες θέσεις του χρήστη
+        saved_db_locations = db.query(models.DBSavedLocation).filter(models.DBSavedLocation.user_email == email).all()
+        saved_list = [{"id": loc.id, "lat": loc.latitude, "lng": loc.longitude} for loc in saved_db_locations]
             
         return {
             "status": "success", 
             "email": email, 
             "karma": user.karma,
-            "saved_lat": user.saved_lat,
-            "saved_lng": user.saved_lng
+            "saved_locations": saved_list
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -106,31 +115,34 @@ def google_auth(body: TokenBody, db: Session = Depends(get_db)):
 @app.get("/my-karma/{email}")
 def get_karma(email: str, db: Session = Depends(get_db)):
     user = db.query(models.DBAppUser).filter(models.DBAppUser.device_id == email).first()
-    if not user:
-        return {"karma": 0, "saved_lat": None, "saved_lng": None}
-    return {"karma": user.karma, "saved_lat": user.saved_lat, "saved_lng": user.saved_lng}
+    karma_val = user.karma if user else 0
+    
+    saved_db_locations = db.query(models.DBSavedLocation).filter(models.DBSavedLocation.user_email == email).all()
+    saved_list = [{"id": loc.id, "lat": loc.latitude, "lng": loc.longitude} for loc in saved_db_locations]
+    
+    return {"karma": karma_val, "saved_locations": saved_list}
 
-# ΝΕΟ: Αποθήκευση Χρυσής Πινέζας στο Cloud
+# Αποθήκευση θέσης με έλεγχο του ορίου των 10
 @app.post("/save-location")
 def save_location(body: SaveLocationBody, db: Session = Depends(get_db)):
-    user = db.query(models.DBAppUser).filter(models.DBAppUser.device_id == body.email).first()
-    if user:
-        user.saved_lat = body.latitude
-        user.saved_lng = body.longitude
-        db.commit()
-        return {"status": "success"}
-    raise HTTPException(status_code=404, detail="User not found")
+    count = db.query(models.DBSavedLocation).filter(models.DBSavedLocation.user_email == body.email).count()
+    if count >= 10:
+        raise HTTPException(status_code=400, detail="Έχεις φτάσει το μέγιστο όριο των 10 αποθηκευμένων θέσεων!")
+    
+    new_loc = models.DBSavedLocation(user_email=body.email, latitude=body.latitude, longitude=body.longitude)
+    db.add(new_loc)
+    db.commit()
+    return {"status": "success", "id": new_loc.id}
 
-# ΝΕΟ: Διαγραφή Χρυσής Πινέζας από το Cloud
-@app.delete("/delete-saved-location/{email}")
-def delete_saved_location(email: str, db: Session = Depends(get_db)):
-    user = db.query(models.DBAppUser).filter(models.DBAppUser.device_id == email).first()
-    if user:
-        user.saved_lat = None
-        user.saved_lng = None
+# Διαγραφή συγκεκριμένης θέσης βάσει ID
+@app.delete("/delete-saved-location/{loc_id}")
+def delete_saved_location(loc_id: int, db: Session = Depends(get_db)):
+    loc = db.query(models.DBSavedLocation).filter(models.DBSavedLocation.id == loc_id).first()
+    if loc:
+        db.delete(loc)
         db.commit()
         return {"status": "success"}
-    raise HTTPException(status_code=404, detail="User not found")
+    raise HTTPException(status_code=404, detail="Location not found")
 
 @app.post("/free-spot")
 def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db)):
