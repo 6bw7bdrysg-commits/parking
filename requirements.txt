@@ -4,3 +4,4 @@ sqlalchemy
 pydantic
 Werkzeug
 psycopg2-binary
+requests
