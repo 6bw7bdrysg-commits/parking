@@ -2,19 +2,19 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean
 from sqlalchemy.sql import func
 from database import Base
 
-class DBUser(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String)
-    is_pro = Column(Boolean, default=False)
+# Νέος πίνακας χρηστών για αποθήκευση Karma
+class DBAppUser(Base):
+    __tablename__ = "app_users"
+    device_id = Column(String, primary_key=True, index=True)
+    karma = Column(Integer, default=0)
 
-class DBParkingSpot(Base):
-    __tablename__ = "parking_spots"
+# Νέος πίνακας θέσεων που δέχεται το string του device_id
+class DBParkingSpotV2(Base):
+    __tablename__ = "parking_spots_v2"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer)
+    device_id = Column(String, index=True) # Ποιος την ανέβασε
     latitude = Column(Float)
     longitude = Column(Float)
     minutes_until_free = Column(Integer)
-    # Προσθήκη στήλης για τη φωτογραφία (αποθηκεύουμε το Base64 string)
     photo = Column(String, nullable=True) 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
