@@ -6,11 +6,11 @@
     <title>ParkKarma</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100%; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        /* Αφαίρεση λευκού πλαισίου από τα popups */
         .leaflet-popup-content-wrapper { background: transparent !important; box-shadow: none !important; border: none !important; }
         .leaflet-popup-tip { display: none !important; }
         .leaflet-container a.leaflet-popup-close-button { display: none !important; }
@@ -78,7 +78,13 @@
     </div>
 
     <div class="controls-container">
-        <div class="karma-display" id="karma-points">🌟 0 Karma</div>
+        <div id="karma-box">
+            <div id="g_id_onload"
+                 data-client_id="766231748892-a0p1h7k1f2nprlqkvdgl0sfffuk0r0am.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse">
+            </div>
+            <div class="g_id_signin" data-type="standard"></div>
+        </div>
         <div class="menu-btn" onclick="toggleMenu()">☰ Μενού</div>
         <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
     </div>
@@ -87,6 +93,7 @@
         <div class="close-menu" onclick="toggleMenu()">✖ Κλείσιμο</div>
         <h2>Μενού</h2>
         <ul style="list-style: none; padding: 0;">
+            <li id="logout-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; color: red; font-weight: bold;" onclick="handleLogout()">🚪 Αποσύνδεση</li>
             <li onclick="openModal('instructions-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">ℹ️ Οδηγίες Χρήσης</li>
             <li onclick="openModal('about-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">👥 Σχετικά με εμάς</li>
             <li onclick="openModal('terms-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">📜 Όροι Χρήσης</li>
@@ -135,22 +142,49 @@
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
         var savedPosition = null, markers = [], userMarker = null, savedMarker = null, lastClickedMarker = null;
 
-        let deviceID = localStorage.getItem('parkkarma_user_id');
-        if (!deviceID) {
-            deviceID = 'user_' + Math.random().toString(16).slice(2, 9);
-            localStorage.setItem('parkkarma_user_id', deviceID);
+        // Κρατάμε το email του συνδεδεμένου χρήστη (αν υπάρχει)
+        let userEmail = localStorage.getItem('parkkarma_email') || null;
+
+        // Διαχείριση της απάντησης από το Google Login
+        async function handleCredentialResponse(response) {
+            let res = await fetch(`${API_BASE_URL}/auth/google`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id_token: response.credential })
+            });
+            if (res.ok) {
+                let data = await res.json();
+                userEmail = data.email;
+                localStorage.setItem('parkkarma_email', userEmail);
+                updateUIForLoggedInUser(data.karma);
+            }
         }
 
-        let userKarma = 0;
+        function updateUIForLoggedInUser(karma) {
+            document.getElementById('karma-box').innerHTML = `<div class="karma-display" id="karma-points">🌟 ${karma} Karma</div>`;
+            document.getElementById('logout-li').style.display = 'block';
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('parkkarma_email');
+            location.reload();
+        }
+
         async function fetchKarma() {
+            if (!userEmail) return;
             try {
-                let res = await fetch(`${API_BASE_URL}/my-karma/${deviceID}`);
+                let res = await fetch(`${API_BASE_URL}/my-karma/${userEmail}`);
                 if (res.ok) {
                     let data = await res.json();
-                    userKarma = data.karma;
-                    document.getElementById('karma-points').innerText = `🌟 ${userKarma} Karma`;
+                    document.getElementById('karma-points').innerText = `🌟 ${data.karma} Karma`;
                 }
-            } catch (e) { console.log("Αναμονή σύνδεσης με το backend..."); }
+            } catch (e) { console.log("Σφάλμα σύνδεσης..."); }
+        }
+
+        // Έλεγχος αν ο χρήστης ήταν ήδη συνδεδεμένος από πριν
+        if (userEmail) {
+            fetchKarma();
+            setTimeout(() => { updateUIForLoggedInUser(0); fetchKarma(); }, 500);
         }
 
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
@@ -202,7 +236,6 @@
 
         function submitPosition(isUserMarker) {
             let pos, fileInput;
-            
             if (isUserMarker) { 
                 pos = userMarker.getLatLng(); 
                 fileInput = document.getElementById('photoInput'); 
@@ -226,9 +259,7 @@
                     }, (err) => {
                         alert("Πρέπει να δώσεις άδεια τοποθεσίας (GPS) για να δημοσιεύσεις.");
                     }, { enableHighAccuracy: true });
-                } else {
-                    alert("Το κινητό σου δεν υποστηρίζει GPS.");
-                }
+                } else { alert("Το κινητό σου δεν υποστηρίζει GPS."); }
             }
         }
 
@@ -255,10 +286,8 @@
 
         function cancelClickedMarker() { if (lastClickedMarker) map.removeLayer(lastClickedMarker); lastClickedMarker = null; map.closePopup(); }
         
-        // ΝΕΟ: Έλεγχος απόστασης κατά την αποθήκευση Χρυσής Πινέζας
         function saveClickedLocation() { 
             let pos = lastClickedMarker.getLatLng(); 
-            
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((currentPos) => {
                     let userLat = currentPos.coords.latitude;
@@ -269,31 +298,20 @@
                         alert("Μπορείς να αποθηκεύσεις μια θέση (Χρυσή Πινέζα) μόνο αν βρίσκεσαι εκεί (έως 60 μέτρα)!");
                         return;
                     }
-                    
-                    localStorage.setItem('savedLat', pos.lat); 
-                    localStorage.setItem('savedLng', pos.lng); 
-                    savedPosition = pos; 
-                    showSavedMarker(); 
-                    alert("Η θέση αποθηκεύτηκε με επιτυχία!"); 
-                    lastClickedMarker.closePopup();
-                }, (err) => {
-                    alert("Πρέπει να δώσεις άδεια τοποθεσίας (GPS) για να αποθηκεύσεις.");
-                }, { enableHighAccuracy: true });
-            } else {
-                alert("Το κινητό σου δεν υποστηρίζει GPS.");
-            }
+                    localStorage.setItem('savedLat', pos.lat); localStorage.setItem('savedLng', pos.lng); 
+                    savedPosition = pos; showSavedMarker(); alert("Η θέση αποθηκεύτηκε με επιτυχία!"); lastClickedMarker.closePopup();
+                }, (err) => { alert("Πρέπει να δώσεις άδεια τοποθεσίας για να αποθηκεύσεις."); }, { enableHighAccuracy: true });
+            } else { alert("Το κινητό σου δεν υποστηρίζει GPS."); }
         }
 
         async function sendToServer(lat, lng, mins, photo) {
             await fetch(`${API_BASE_URL}/free-spot`, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({device_id: deviceID, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo}) 
+                body: JSON.stringify({user_email: userEmail, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo}) 
             });
-            
-            alert("Η θέση δημοσιεύτηκε! Θα κερδίσεις Karma μόλις την καταλάβει κάποιος άλλος οδηγός.");
-            map.closePopup(); 
-            loadSpots();
+            alert(userEmail ? "Η θέση δημοσιεύτηκε! Θα κερδίσεις Karma μόλις την καταλάβει κάποιος άλλος οδηγός." : "Η θέση δημοσιεύτηκε ανώνυμα!");
+            map.closePopup(); loadSpots();
         }
 
         async function loadSpots() {
@@ -302,9 +320,7 @@
             markers.forEach(m => map.removeLayer(m)); markers = [];
             data.spots.forEach(spot => {
                 let dateStr = spot.created_at;
-                if (!dateStr.includes('Z') && !dateStr.includes('+')) { 
-                    dateStr += 'Z'; 
-                }
+                if (!dateStr.includes('Z') && !dateStr.includes('+')) { dateStr += 'Z'; }
                 let created = new Date(dateStr);
                 let remaining = spot.minutes_until_free - Math.floor((new Date() - created) / 60000);
                 
@@ -325,7 +341,6 @@
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     let userLat = pos.coords.latitude;
                     let userLng = pos.coords.longitude;
-                    
                     let distance = L.latLng(userLat, userLng).distanceTo(L.latLng(spotLat, spotLng));
 
                     if (distance > 60) {
@@ -333,31 +348,24 @@
                         return;
                     }
 
-                    if (deviceID === creatorId) {
+                    if (userEmail && userEmail === creatorId) {
                         alert("Αφαίρεσες τη δική σου θέση. Δεν προστίθεται Karma.");
-                    } else {
+                    } else if (creatorId !== "anonymous") {
                         alert("Μπράβο! Έπιασες τη θέση και ο οδηγός που την άφησε κέρδισε Karma.");
+                    } else {
+                        alert("Κατέλαβες μια ανώνυμη θέση με επιτυχία!");
                     }
 
-                    await fetch(`${API_BASE_URL}/occupy-spot/${spotId}?occupier_id=${deviceID}`, { method: 'DELETE' });
+                    // Στέλνουμε το email μας (ή το string "anonymous") στον server
+                    let ident = userEmail ? userEmail : "anonymous";
+                    await fetch(`${API_BASE_URL}/occupy-spot/${spotId}?occupier_email=${ident}`, { method: 'DELETE' });
                     
-                    map.closePopup();
-                    loadSpots();
-                    fetchKarma(); 
-                }, (err) => {
-                    alert("Πρέπει να δώσεις άδεια τοποθεσίας (GPS) για να δηλώσεις θέση.");
-                }, { enableHighAccuracy: true });
-            } else {
-                alert("Το κινητό σου δεν υποστηρίζει υπηρεσίες τοποθεσίας (GPS).");
-            }
+                    map.closePopup(); loadSpots(); fetchKarma(); 
+                }, (err) => { alert("Πρέπει να δώσεις άδεια τοποθεσίας (GPS) για να δηλώσεις θέση."); }, { enableHighAccuracy: true });
+            } else { alert("Το κινητό σου δεν υποστηρίζει GPS."); }
         }
 
-        loadSavedPosition(); 
-        showSavedMarker(); 
-        resetUserMarker(); 
-        fetchKarma(); 
-        loadSpots(); 
-        
+        loadSavedPosition(); showSavedMarker(); resetUserMarker(); loadSpots(); 
         setInterval(loadSpots, 5000);
         setInterval(fetchKarma, 10000);
     </script>
