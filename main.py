@@ -1,24 +1,14 @@
-import os
-import datetime
-import smtplib
-import re
-import random
-from email.mime.text import MIMEText
-
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
-
-# Χρησιμοποιούμε το werkzeug για ασφαλή κρυπτογράφηση κωδικών
-from werkzeug.security import generate_password_hash, check_password_hash
-
-from database import engine, get_db, SessionLocal
+from datetime import datetime
 import models
+from database import engine, get_db, SessionLocal
 
-# Δημιουργία των πινάκων στη βάση αν δεν υπάρχουν
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -31,159 +21,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Εφόσον το βρήκαμε στη ρίζα, ορίζουμε το path έτσι:
-INDEX_FILE = "/opt/render/project/src/index.html"
+app.mount("/static", StaticFiles(directory="."), name="static")
 
-
-# --- PYDANTIC SCHEMAS ---
+@app.on_event("startup")
+def startup_event():
+    db = SessionLocal()
+    if not db.query(models.DBUser).filter(models.DBUser.id == 1).first():
+        db.add(models.DBUser(id=1, username="default_user", is_pro=False))
+        db.commit()
+    db.close()
 
 class ParkingSpotCreate(BaseModel):
     user_id: int
     latitude: float
     longitude: float
     minutes_until_free: int
-    photo: Optional[str] = None
-
-class UserRegister(BaseModel):
-    email: str
-    password: str
-
-class UserLogin(BaseModel):
-    email: str
-    password: str
-
-class PasswordReset(BaseModel):
-    email: str
-
-class EmailVerification(BaseModel):
-    email: str
-    code: str
-
-
-# --- STARTUP EVENT ---
-
-@app.on_event("startup")
-def startup_event():
-    db = SessionLocal()
-    # Έλεγχος αν υπάρχει ο admin πριν την προσθήκη για να μην έχουμε conflicts
-    if not db.query(models.DBUser).filter(models.DBUser.email == "admin@parkkarma.com").first():
-        default_password = generate_password_hash("123456")
-        db.add(models.DBUser(id=1, email="admin@parkkarma.com", password_hash=default_password, is_verified=True))
-        db.commit()
-    db.close()
-
-
-# --- ROUTES ---
+    photo: Optional[str] = None  # Διορθωμένο για να μην βγάζει 422
 
 @app.get("/")
 def read_root():
-    return FileResponse(INDEX_FILE)
+    return FileResponse("index.html")
 
-
-# 1. ΕΓΓΡΑΦΗ ΜΕ ΑΠΟΣΤΟΛΗ ΚΩΔΙΚΟΥ ΕΠΙΒΕΒΑΙΩΣΗΣ
-@app.post("/register")
-def register(user: UserRegister, db: Session = Depends(get_db)):
-    email_lower = user.email.strip().lower()
-    
-    email_regex = r'^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
-    if not re.search(email_regex, email_lower):
-        return JSONResponse(status_code=400, content={"error": "Μη έγκυρη μορφή email."})
-    
-    existing_user = db.query(models.DBUser).filter(models.DBUser.email == email_lower).first()
-    if existing_user:
-        return JSONResponse(status_code=400, content={"error": "Το email χρησιμοποιείται ήδη."})
-    
-    v_code = str(random.randint(100000, 999999))
-    hashed_password = generate_password_hash(user.password)
-    
-    new_user = models.DBUser(
-        email=email_lower, 
-        password_hash=hashed_password,
-        is_verified=False,
-        verification_code=v_code
-    )
-    db.add(new_user)
-    db.commit()
-    
-    # ΑΠΟΣΤΟΛΗ EMAIL
-    try:
-        sender_email = "george@parkkarmaapp.com"
-        sender_password = "hrrnubzbfscvpjyv"
-        
-        msg = MIMEText(f"Ο κωδικός επιβεβαίωσης για το ParkKarma είναι: {v_code}")
-        msg['Subject'] = 'Επιβεβαίωση Εγγραφής - ParkKarma'
-        msg['From'] = sender_email
-        msg['To'] = email_lower
-        
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, email_lower, msg.as_string())
-    except Exception as e:
-        print(f"Σφάλμα αποστολής email: {e}")
-        return JSONResponse(status_code=500, content={"error": "Επιτυχής εγγραφή, αλλά απέτυχε η αποστολή email."})
-    
-    return {"message": "Επιτυχής εγγραφή! Ελέγξτε το email σας για τον κωδικό επιβεβαίωσης."}
-
-
-# 1.1 ΕΠΙΒΕΒΑΙΩΣΗ EMAIL
-@app.post("/verify")
-def verify_user(data: EmailVerification, db: Session = Depends(get_db)):
-    user = db.query(models.DBUser).filter(models.DBUser.email == data.email.lower()).first()
-    if user and user.verification_code == data.code:
-        user.is_verified = True
-        user.verification_code = None
-        db.commit()
-        return {"message": "Ο λογαριασμός επιβεβαιώθηκε!"}
-    return JSONResponse(status_code=400, content={"error": "Λάθος κωδικός επιβεβαίωσης."})
-
-
-# 2. ΕΙΣΟΔΟΣ
-@app.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
-    email_lower = user.email.strip().lower()
-    db_user = db.query(models.DBUser).filter(models.DBUser.email == email_lower).first()
-    
-    if not db_user or not check_password_hash(db_user.password_hash, user.password):
-        return JSONResponse(status_code=401, content={"error": "Λάθος email ή κωδικός."})
-    
-    if not db_user.is_verified:
-        return JSONResponse(status_code=403, content={"error": "Πρέπει πρώτα να επιβεβαιώσετε το email σας."})
-    
-    return {"message": "Επιτυχής σύνδεση!", "user_id": db_user.id}
-
-
-# 3. ΕΠΑΝΑΦΟΡΑ ΚΩΔΙΚΟΥ
-@app.post("/reset-password-request")
-def reset_password_request(req: PasswordReset, db: Session = Depends(get_db)):
-    email_lower = req.email.strip().lower()
-    user = db.query(models.DBUser).filter(models.DBUser.email == email_lower).first()
-    if not user:
-        return JSONResponse(status_code=404, content={"error": "Δεν βρέθηκε λογαριασμός."})
-    
-    try:
-        sender_email = "george@parkkarmaapp.com"
-        sender_password = "hrrnubzbfscvpjyv"
-        
-        temporary_password = f"Park{datetime.datetime.now().strftime('%S%M')}"
-        user.password_hash = generate_password_hash(temporary_password)
-        db.commit()
-        
-        msg = MIMEText(f"Ο νέος κωδικός σας είναι: {temporary_password}")
-        msg['Subject'] = 'Επαναφορά Κωδικού - ParkKarma'
-        msg['From'] = sender_email
-        msg['To'] = email_lower
-        
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, email_lower, msg.as_string())
-            
-        return {"message": "Το email επαναφοράς στάλθηκε!"}
-    except Exception as e:
-        print(f"Σφάλμα αποστολής email: {e}")
-        return JSONResponse(status_code=500, content={"error": "Αποτυχία αποστολής email."})
-
-
-# 4. ΔΗΜΙΟΥΡΓΙΑ ΘΕΣΗΣ
 @app.post("/free-spot")
 def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db)):
     new_spot = models.DBParkingSpot(
@@ -197,8 +55,6 @@ def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db))
     db.commit()
     return {"status": "success"}
 
-
-# 5. ΑΝΑΖΗΤΗΣΗ ΘΕΣΕΩΝ
 @app.get("/search-spots")
 def get_active_parking_spots(user_id: int = 1, db: Session = Depends(get_db)):
     all_spots = db.query(models.DBParkingSpot).all()
@@ -214,8 +70,6 @@ def get_active_parking_spots(user_id: int = 1, db: Session = Depends(get_db)):
         })
     return {"spots": spots_data}
 
-
-# 6. ΔΙΑΓΡΑΦΗ ΘΕΣΗΣ
 @app.delete("/occupy-spot/{spot_id}")
 def occupy_spot(spot_id: int, db: Session = Depends(get_db)):
     spot = db.query(models.DBParkingSpot).filter(models.DBParkingSpot.id == spot_id).first()
