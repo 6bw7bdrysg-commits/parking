@@ -5,7 +5,8 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+import asyncio
 import models
 from database import engine, get_db, SessionLocal
 
@@ -23,20 +24,53 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="."), name="static")
 
+# --- ΝΕΑ ΣΥΝΑΡΤΗΣΗ: Αυτόματος Καθαρισμός Ληγμένων Θέσεων ---
+async def cleanup_expired_spots():
+    while True:
+        await asyncio.sleep(60 * 5)  # Εκτελείται κάθε 5 λεπτά
+        db = SessionLocal()
+        try:
+            spots = db.query(models.DBParkingSpot).all()
+            now = datetime.now(timezone.utc)
+            
+            for spot in spots:
+                if spot.created_at:
+                    # Εξασφαλίζουμε σωστή μορφή ώρας (UTC)
+                    created = spot.created_at
+                    if created.tzinfo is None:
+                        created = created.replace(tzinfo=timezone.utc)
+                    
+                    # Υπολογίζουμε πότε λήγει η θέση
+                    expiration_time = created + timedelta(minutes=spot.minutes_until_free)
+                    
+                    # Αν η τωρινή ώρα είναι μεγαλύτερη από την ώρα λήξης, διαγράφουμε τη θέση!
+                    if now > expiration_time:
+                        db.delete(spot)
+            
+            db.commit()
+        except Exception as e:
+            print(f"Σφάλμα κατά τον καθαρισμό: {e}")
+        finally:
+            db.close()
+
+# --- Ενημερωμένο startup event για να ξεκινάει ο καθαριστής ---
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     db = SessionLocal()
     if not db.query(models.DBUser).filter(models.DBUser.id == 1).first():
         db.add(models.DBUser(id=1, username="default_user", is_pro=False))
         db.commit()
     db.close()
+    
+    # Ξεκινάμε την εργασία στο παρασκήνιο
+    asyncio.create_task(cleanup_expired_spots())
 
 class ParkingSpotCreate(BaseModel):
     user_id: int
     latitude: float
     longitude: float
     minutes_until_free: int
-    photo: Optional[str] = None  # Διορθωμένο για να μην βγάζει 422
+    photo: Optional[str] = None
 
 @app.get("/")
 def read_root():
