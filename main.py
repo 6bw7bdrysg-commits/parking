@@ -24,49 +24,33 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="."), name="static")
 
-# --- ΝΕΑ ΣΥΝΑΡΤΗΣΗ: Αυτόματος Καθαρισμός Ληγμένων Θέσεων ---
 async def cleanup_expired_spots():
     while True:
-        await asyncio.sleep(60 * 5)  # Εκτελείται κάθε 5 λεπτά
+        await asyncio.sleep(60 * 5)
         db = SessionLocal()
         try:
-            spots = db.query(models.DBParkingSpot).all()
+            spots = db.query(models.DBParkingSpotV2).all()
             now = datetime.now(timezone.utc)
-            
             for spot in spots:
                 if spot.created_at:
-                    # Εξασφαλίζουμε σωστή μορφή ώρας (UTC)
                     created = spot.created_at
                     if created.tzinfo is None:
                         created = created.replace(tzinfo=timezone.utc)
-                    
-                    # Υπολογίζουμε πότε λήγει η θέση
                     expiration_time = created + timedelta(minutes=spot.minutes_until_free)
-                    
-                    # Αν η τωρινή ώρα είναι μεγαλύτερη από την ώρα λήξης, διαγράφουμε τη θέση!
                     if now > expiration_time:
                         db.delete(spot)
-            
             db.commit()
         except Exception as e:
-            print(f"Σφάλμα κατά τον καθαρισμό: {e}")
+            print(f"Σφάλμα καθαρισμού: {e}")
         finally:
             db.close()
 
-# --- Ενημερωμένο startup event για να ξεκινάει ο καθαριστής ---
 @app.on_event("startup")
 async def startup_event():
-    db = SessionLocal()
-    if not db.query(models.DBUser).filter(models.DBUser.id == 1).first():
-        db.add(models.DBUser(id=1, username="default_user", is_pro=False))
-        db.commit()
-    db.close()
-    
-    # Ξεκινάμε την εργασία στο παρασκήνιο
     asyncio.create_task(cleanup_expired_spots())
 
 class ParkingSpotCreate(BaseModel):
-    user_id: int
+    device_id: str
     latitude: float
     longitude: float
     minutes_until_free: int
@@ -76,10 +60,24 @@ class ParkingSpotCreate(BaseModel):
 def read_root():
     return FileResponse("index.html")
 
+# Endpoint για να παίρνει το frontend τα Karma του χρήστη
+@app.get("/my-karma/{device_id}")
+def get_karma(device_id: str, db: Session = Depends(get_db)):
+    user = db.query(models.DBAppUser).filter(models.DBAppUser.device_id == device_id).first()
+    if not user:
+        user = models.DBAppUser(device_id=device_id, karma=0)
+        db.add(user)
+        db.commit()
+    return {"karma": user.karma}
+
 @app.post("/free-spot")
 def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db)):
-    new_spot = models.DBParkingSpot(
-        user_id=spot.user_id, 
+    # Δημιουργία χρήστη αν δεν υπάρχει
+    if not db.query(models.DBAppUser).filter(models.DBAppUser.device_id == spot.device_id).first():
+        db.add(models.DBAppUser(device_id=spot.device_id, karma=0))
+        
+    new_spot = models.DBParkingSpotV2(
+        device_id=spot.device_id, 
         latitude=spot.latitude, 
         longitude=spot.longitude, 
         minutes_until_free=spot.minutes_until_free,
@@ -90,12 +88,13 @@ def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db))
     return {"status": "success"}
 
 @app.get("/search-spots")
-def get_active_parking_spots(user_id: int = 1, db: Session = Depends(get_db)):
-    all_spots = db.query(models.DBParkingSpot).all()
+def get_active_parking_spots(db: Session = Depends(get_db)):
+    all_spots = db.query(models.DBParkingSpotV2).all()
     spots_data = []
     for spot in all_spots:
         spots_data.append({
             "id": spot.id,
+            "device_id": spot.device_id,
             "latitude": spot.latitude,
             "longitude": spot.longitude,
             "minutes_until_free": spot.minutes_until_free,
@@ -105,10 +104,17 @@ def get_active_parking_spots(user_id: int = 1, db: Session = Depends(get_db)):
     return {"spots": spots_data}
 
 @app.delete("/occupy-spot/{spot_id}")
-def occupy_spot(spot_id: int, db: Session = Depends(get_db)):
-    spot = db.query(models.DBParkingSpot).filter(models.DBParkingSpot.id == spot_id).first()
+def occupy_spot(spot_id: int, occupier_id: str, db: Session = Depends(get_db)):
+    spot = db.query(models.DBParkingSpotV2).filter(models.DBParkingSpotV2.id == spot_id).first()
     if not spot:
         raise HTTPException(status_code=404, detail="Δεν βρέθηκε.")
+    
+    # Η ΛΟΓΙΚΗ ΤΟΥ ΚΑΡΜΑ: Αν αυτός που την παίρνει δεν είναι αυτός που την άφησε
+    if spot.device_id != occupier_id:
+        creator = db.query(models.DBAppUser).filter(models.DBAppUser.device_id == spot.device_id).first()
+        if creator:
+            creator.karma += 10
+            
     db.delete(spot)
     db.commit()
     return {"status": "success"}
