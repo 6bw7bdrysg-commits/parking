@@ -85,6 +85,14 @@ class SaveLocationBody(BaseModel):
 def read_root():
     return FileResponse("index.html")
 
+@app.get("/manifest.json")
+def get_manifest():
+    return FileResponse("manifest.json")
+
+@app.get("/sw.js")
+def get_sw():
+    return FileResponse("sw.js", media_type="application/javascript")
+
 @app.post("/auth/google")
 def google_auth(body: TokenBody, db: Session = Depends(get_db)):
     try:
@@ -226,7 +234,6 @@ def occupy_spot(spot_id: int, occupier_email: str, db: Session = Depends(get_db)
     db.commit()
     return {"status": "success"}
 
-# ΝΕΟ: Επιστρέφει τους κορυφαίους χρήστες κρύβοντας μέρος του email
 @app.get("/leaderboard")
 def get_leaderboard(db: Session = Depends(get_db)):
     top_users = db.query(models.DBAppUser).filter(models.DBAppUser.karma > 0).order_by(models.DBAppUser.karma.desc()).limit(10).all()
