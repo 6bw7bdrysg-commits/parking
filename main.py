@@ -27,19 +27,31 @@ app.mount("/static", StaticFiles(directory="."), name="static")
 
 async def cleanup_expired_spots():
     while True:
-        await asyncio.sleep(60 * 5)
+        await asyncio.sleep(60 * 1) # Έλεγχος κάθε 1 λεπτό
         db = SessionLocal()
         try:
             spots = db.query(models.DBParkingSpotV2).all()
             now = datetime.now(timezone.utc)
             for spot in spots:
+                # Έλεγχος αν έληξε εντελώς η θέση
                 if spot.created_at:
                     created = spot.created_at
                     if created.tzinfo is None:
-                        created = created.replace(timezone.utc)
+                        created = created.replace(tzinfo=timezone.utc)
                     expiration_time = created + timedelta(minutes=spot.minutes_until_free)
                     if now > expiration_time:
                         db.delete(spot)
+                        continue
+                
+                # Έλεγχος αν έληξε η Κράτηση (5 λεπτά) - Ξαναγίνεται ελεύθερη!
+                if spot.is_booked and spot.booked_at:
+                    booked_time = spot.booked_at
+                    if booked_time.tzinfo is None:
+                        booked_time = booked_time.replace(tzinfo=timezone.utc)
+                    if now > booked_time + timedelta(minutes=5):
+                        spot.is_booked = False
+                        spot.booked_by = None
+                        spot.booked_at = None
             db.commit()
         except Exception as e:
             print(f"Σφάλμα καθαρισμού: {e}")
@@ -63,7 +75,7 @@ class LocalSpot(BaseModel):
 
 class TokenBody(BaseModel):
     id_token: str
-    local_spots: Optional[List[LocalSpot]] = [] # Λίστα με τοπικές θέσεις για migration
+    local_spots: Optional[List[LocalSpot]] = []
 
 class SaveLocationBody(BaseModel):
     email: str
@@ -90,7 +102,6 @@ def google_auth(body: TokenBody, db: Session = Depends(get_db)):
             db.add(user)
             db.commit()
         
-        # ΜΕΤΑΦΟΡΑ ΔΕΔΟΜΕΝΩΝ: Μεταφορά των πολλαπλών τοπικών θέσεων στο Cloud (έως όριο 10)
         current_saved_count = db.query(models.DBSavedLocation).filter(models.DBSavedLocation.user_email == email).count()
         if body.local_spots:
             for spot in body.local_spots:
@@ -99,7 +110,6 @@ def google_auth(body: TokenBody, db: Session = Depends(get_db)):
                     current_saved_count += 1
             db.commit()
             
-        # Παίρνουμε όλες τις αποθηκευμένες θέσεις του χρήστη
         saved_db_locations = db.query(models.DBSavedLocation).filter(models.DBSavedLocation.user_email == email).all()
         saved_list = [{"id": loc.id, "lat": loc.latitude, "lng": loc.longitude} for loc in saved_db_locations]
             
@@ -122,7 +132,6 @@ def get_karma(email: str, db: Session = Depends(get_db)):
     
     return {"karma": karma_val, "saved_locations": saved_list}
 
-# Αποθήκευση θέσης με έλεγχο του ορίου των 10
 @app.post("/save-location")
 def save_location(body: SaveLocationBody, db: Session = Depends(get_db)):
     count = db.query(models.DBSavedLocation).filter(models.DBSavedLocation.user_email == body.email).count()
@@ -134,7 +143,6 @@ def save_location(body: SaveLocationBody, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "success", "id": new_loc.id}
 
-# Διαγραφή συγκεκριμένης θέσης βάσει ID
 @app.delete("/delete-saved-location/{loc_id}")
 def delete_saved_location(loc_id: int, db: Session = Depends(get_db)):
     loc = db.query(models.DBSavedLocation).filter(models.DBSavedLocation.id == loc_id).first()
@@ -169,9 +177,40 @@ def get_active_parking_spots(db: Session = Depends(get_db)):
             "longitude": spot.longitude,
             "minutes_until_free": spot.minutes_until_free,
             "photo": spot.photo,
-            "created_at": spot.created_at.isoformat() if spot.created_at else None
+            "created_at": spot.created_at.isoformat() if spot.created_at else None,
+            "is_booked": spot.is_booked,
+            "booked_by": spot.booked_by,
+            "booked_at": spot.booked_at.isoformat() if spot.booked_at else None
         })
     return {"spots": spots_data}
+
+# ΝΕΟ: Endpoint για να "Κλείσεις" μια θέση
+@app.post("/book-spot/{spot_id}")
+def book_spot(spot_id: int, occupier_id: str, db: Session = Depends(get_db)):
+    spot = db.query(models.DBParkingSpotV2).filter(models.DBParkingSpotV2.id == spot_id).first()
+    if not spot:
+        raise HTTPException(status_code=404, detail="Δεν βρέθηκε η θέση.")
+    if spot.is_booked:
+        raise HTTPException(status_code=400, detail="Η θέση είναι ήδη κρατημένη.")
+    
+    spot.is_booked = True
+    spot.booked_by = occupier_id
+    spot.booked_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"status": "success"}
+
+# ΝΕΟ: Endpoint για Ακύρωση Κράτησης
+@app.post("/unbook-spot/{spot_id}")
+def unbook_spot(spot_id: int, occupier_id: str, db: Session = Depends(get_db)):
+    spot = db.query(models.DBParkingSpotV2).filter(models.DBParkingSpotV2.id == spot_id).first()
+    if not spot:
+        raise HTTPException(status_code=404, detail="Δεν βρέθηκε η θέση.")
+    if spot.booked_by == occupier_id:
+        spot.is_booked = False
+        spot.booked_by = None
+        spot.booked_at = None
+        db.commit()
+    return {"status": "success"}
 
 @app.delete("/occupy-spot/{spot_id}")
 def occupy_spot(spot_id: int, occupier_email: str, db: Session = Depends(get_db)):
@@ -179,6 +218,7 @@ def occupy_spot(spot_id: int, occupier_email: str, db: Session = Depends(get_db)
     if not spot:
         raise HTTPException(status_code=404, detail="Δεν βρέθηκε.")
     
+    # Αν την παίρνει κάποιος άλλος ενώ είναι κρατημένη (πρόλαβε τον οδηγό), είναι έγκυρο!
     if spot.device_id != "anonymous" and spot.device_id != occupier_email:
         creator = db.query(models.DBAppUser).filter(models.DBAppUser.device_id == spot.device_id).first()
         if creator:
