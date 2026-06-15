@@ -86,6 +86,10 @@
         .address-text { color: #555; font-size: 13px; margin: 5px 0; font-weight: normal; }
         .spot-tag { background: #e9ecef; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 13px; display: inline-block; margin-bottom: 5px; border: 1px solid #ccc; font-weight: bold; }
         .tag-dropdown { width: 100%; padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
+
+        .leaderboard-list { margin-top: 15px; padding: 0; list-style: none; }
+        .leaderboard-item { padding: 12px 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+        .leaderboard-karma { background: #ffc107; padding: 4px 10px; border-radius: 12px; font-weight: bold; color: black; }
     </style>
 </head>
 <body>
@@ -129,10 +133,20 @@
         <h2>Μενού</h2>
         <ul style="list-style: none; padding: 0;">
             <li id="logout-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; color: red; font-weight: bold;" onclick="handleLogout()">🚪 Αποσύνδεση</li>
+            <li onclick="openLeaderboard()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold;">🏆 Top Οδηγοί (Leaderboard)</li>
             <li onclick="openModal('instructions-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">ℹ️ Οδηγίες Χρήσης</li>
             <li onclick="openModal('about-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">👥 Σχετικά με εμάς</li>
             <li onclick="openModal('terms-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">📜 Όροι Χρήσης</li>
         </ul>
+    </div>
+
+    <div id="leaderboard-modal" class="modal">
+        <h2 style="color:#ffc107; text-align:center; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">🏆 Top Οδηγοί</h2>
+        <p style="text-align:center; color:#555; margin-top:-10px;">Οι χρήστες που βοηθούν περισσότερο την πόλη!</p>
+        <ul id="leaderboard-list" class="leaderboard-list">
+            <p style="text-align:center;">Φόρτωση...</p>
+        </ul>
+        <button class="close-modal" onclick="closeModal('leaderboard-modal')">Κλείσιμο</button>
     </div>
 
     <div id="instructions-modal" class="modal">
@@ -186,21 +200,15 @@
             localStorage.setItem('parkkarma_anon_id', anonDeviceID);
         }
 
-        // --- ΝΕΟΣ, ΣΩΣΤΟΣ ΜΗΧΑΝΙΣΜΟΣ ΠΑΡΑΚΟΛΟΥΘΗΣΗΣ POPUP ---
         let isPopupOpen = false;
         let popupJustClosed = false;
 
-        map.on('popupopen', function() {
-            isPopupOpen = true;
-        });
-
+        map.on('popupopen', function() { isPopupOpen = true; });
         map.on('popupclose', function() {
             isPopupOpen = false;
             popupJustClosed = true;
-            // Κρατάμε τη μνήμη ότι μόλις έκλεισε για 200 χιλιοστά του δευτερολέπτου
             setTimeout(() => { popupJustClosed = false; }, 200);
         });
-        // -----------------------------------------------------
 
         async function getAddress(lat, lng) {
             try {
@@ -278,6 +286,31 @@
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
         function openModal(id) { document.getElementById(id).style.display = 'block'; toggleMenu(); }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // ΝΕΟ: Λειτουργία εμφάνισης του Leaderboard
+        async function openLeaderboard() {
+            openModal('leaderboard-modal');
+            document.getElementById('leaderboard-list').innerHTML = "<p style='text-align:center;'>Φόρτωση δεδομένων...</p>";
+            try {
+                let res = await fetch(`${API_BASE_URL}/leaderboard`);
+                let data = await res.json();
+                let html = "";
+                if(data.leaderboard.length === 0) {
+                    html = "<p style='text-align:center;'>Δεν υπάρχουν ακόμα οδηγοί με Karma.</p>";
+                } else {
+                    data.leaderboard.forEach((item, index) => {
+                        let medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🏅";
+                        html += `<li class="leaderboard-item">
+                                    <span>${medal} <b>${item.user}</b></span>
+                                    <span class="leaderboard-karma">${item.karma}</span>
+                                 </li>`;
+                    });
+                }
+                document.getElementById('leaderboard-list').innerHTML = html;
+            } catch(e) {
+                document.getElementById('leaderboard-list').innerHTML = "<p style='text-align:center; color:red;'>Σφάλμα σύνδεσης.</p>";
+            }
+        }
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
             attribution: '© OpenStreetMap contributors', 
@@ -469,21 +502,18 @@
             }
         }
 
-        // --- ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΟ ΣΩΣΤΟ ΚΛΙΚ ---
         map.on('click', async function(e) {
             let menuOverlay = document.getElementById('menu-overlay');
             let isMenuOpen = menuOverlay && menuOverlay.style.display === 'block';
 
-            // Ελέγχουμε αν υπάρχει ανοιχτό μενού Ή ανοιχτό popup Ή αν κάποιο popup μόλις έκλεισε 
-            // Ή αν υπάρχουν ήδη στον χάρτη πινέζες αναζήτησης/νέας θέσης.
             if (isMenuOpen || isPopupOpen || popupJustClosed || lastClickedMarker || searchMarker) {
                 if (isMenuOpen) menuOverlay.style.display = 'none';
                 if (lastClickedMarker) { map.removeLayer(lastClickedMarker); lastClickedMarker = null; }
                 if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
-                return; // Σταματάμε εδώ. Δεν προσθέτουμε νέα πινέζα!
+                map.closePopup(); 
+                return; 
             }
 
-            // Αν φτάσαμε εδώ, ο χάρτης είναι 100% καθαρός, άρα ανοίγουμε τη νέα πινέζα
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
             let popupId = "new_spot_addr";
             let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width: 180px;">
@@ -503,14 +533,8 @@
             </div>`;
             
             lastClickedMarker.bindPopup(popupContent).openPopup();
-            
-            // Βάζουμε την πινέζα να φαίνεται από πάνω από τις άλλες
-            lastClickedMarker.setZIndexOffset(1000); 
-
-            let popup = lastClickedMarker.getPopup();
-            if (popup && popup._container) {
-                L.DomEvent.disableClickPropagation(popup._container);
-            }
+            lastClickedMarker.bringToFront();
+            L.DomEvent.disableClickPropagation(lastClickedMarker._popup._container);
             
             let addr = await getAddress(e.latlng.lat, e.latlng.lng);
             let addrEl = document.getElementById(popupId);
@@ -640,7 +664,8 @@
                     
                     let tagHtml = spot.tag ? `<div class="spot-tag">${spot.tag}</div><br>` : "";
                     
-                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/...${spot.latitude},${spot.longitude}')">🚗 Οδηγίες GPS</button>`;
+                    // ΔΙΟΡΘΩΜΕΝΟ GOOGLE MAPS LINK:
+                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
                         if (bookedByMe) {
