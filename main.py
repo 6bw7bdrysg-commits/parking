@@ -27,13 +27,12 @@ app.mount("/static", StaticFiles(directory="."), name="static")
 
 async def cleanup_expired_spots():
     while True:
-        await asyncio.sleep(60 * 1) # Έλεγχος κάθε 1 λεπτό
+        await asyncio.sleep(60 * 1) 
         db = SessionLocal()
         try:
             spots = db.query(models.DBParkingSpotV2).all()
             now = datetime.now(timezone.utc)
             for spot in spots:
-                # Έλεγχος αν έληξε εντελώς η θέση
                 if spot.created_at:
                     created = spot.created_at
                     if created.tzinfo is None:
@@ -43,7 +42,6 @@ async def cleanup_expired_spots():
                         db.delete(spot)
                         continue
                 
-                # Έλεγχος αν έληξε η Κράτηση (5 λεπτά) - Ξαναγίνεται ελεύθερη!
                 if spot.is_booked and spot.booked_at:
                     booked_time = spot.booked_at
                     if booked_time.tzinfo is None:
@@ -68,6 +66,7 @@ class ParkingSpotCreate(BaseModel):
     longitude: float
     minutes_until_free: int
     photo: Optional[str] = None
+    tag: Optional[str] = None # ΝΕΟ
 
 class LocalSpot(BaseModel):
     lat: float
@@ -159,7 +158,8 @@ def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db))
         latitude=spot.latitude, 
         longitude=spot.longitude, 
         minutes_until_free=spot.minutes_until_free,
-        photo=spot.photo
+        photo=spot.photo,
+        tag=spot.tag # ΝΕΟ
     )
     db.add(new_spot)
     db.commit()
@@ -177,6 +177,7 @@ def get_active_parking_spots(db: Session = Depends(get_db)):
             "longitude": spot.longitude,
             "minutes_until_free": spot.minutes_until_free,
             "photo": spot.photo,
+            "tag": spot.tag, # ΝΕΟ
             "created_at": spot.created_at.isoformat() if spot.created_at else None,
             "is_booked": spot.is_booked,
             "booked_by": spot.booked_by,
@@ -184,7 +185,6 @@ def get_active_parking_spots(db: Session = Depends(get_db)):
         })
     return {"spots": spots_data}
 
-# ΝΕΟ: Endpoint για να "Κλείσεις" μια θέση
 @app.post("/book-spot/{spot_id}")
 def book_spot(spot_id: int, occupier_id: str, db: Session = Depends(get_db)):
     spot = db.query(models.DBParkingSpotV2).filter(models.DBParkingSpotV2.id == spot_id).first()
@@ -199,7 +199,6 @@ def book_spot(spot_id: int, occupier_id: str, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "success"}
 
-# ΝΕΟ: Endpoint για Ακύρωση Κράτησης
 @app.post("/unbook-spot/{spot_id}")
 def unbook_spot(spot_id: int, occupier_id: str, db: Session = Depends(get_db)):
     spot = db.query(models.DBParkingSpotV2).filter(models.DBParkingSpotV2.id == spot_id).first()
@@ -218,7 +217,6 @@ def occupy_spot(spot_id: int, occupier_email: str, db: Session = Depends(get_db)
     if not spot:
         raise HTTPException(status_code=404, detail="Δεν βρέθηκε.")
     
-    # Αν την παίρνει κάποιος άλλος ενώ είναι κρατημένη (πρόλαβε τον οδηγό), είναι έγκυρο!
     if spot.device_id != "anonymous" and spot.device_id != occupier_email:
         creator = db.query(models.DBAppUser).filter(models.DBAppUser.device_id == spot.device_id).first()
         if creator:
