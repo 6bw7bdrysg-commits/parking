@@ -107,6 +107,7 @@
         <p><b>1. Βρίσκεις πάρκινγκ σε δευτερόλεπτα</b><br>Μην γυρνάς άσκοπα! Κοίτα τον χάρτη:<br>
         • <b>Πράσινο 🟢:</b> Μια θέση μόλις άδειασε – πρόλαβε την!<br>
         • <b>Κόκκινο 🔴:</b> Η θέση είναι στα "τελευταία της" – αν είσαι κοντά, είναι δική σου.<br>
+        • <b>Μπλε 🔵:</b> Κάποιος έχει πατήσει "Έρχομαι!" - Καλύτερα ψάξε αλλού.<br>
         Πάτα πάνω στη θέση και διάλεξε "Οδηγίες" για να σε πάει το GPS απευθείας εκεί.</p>
         <p><b>2. Γίνεσαι μέλος μιας μεγάλης παρέας</b><br>Όταν φεύγεις από μια θέση, μην την αφήνεις να πάει χαμένη!<br>
         • Πάτα "Δημοσίευσε" και ενημέρωσε τους υπόλοιπους ότι αδειάζεις. <b>(Κερδίζεις +10 Karma!)</b><br>
@@ -143,8 +144,14 @@
         var savedPositions = [], markers = [], savedMarkers = [], userMarker = null, lastClickedMarker = null;
 
         let userEmail = localStorage.getItem('parkkarma_email') || null;
+        
+        // Μοναδικό ID για ανώνυμους (για να ξέρει ο server ποιος έκανε την κράτηση)
+        let anonDeviceID = localStorage.getItem('parkkarma_anon_id');
+        if (!anonDeviceID) {
+            anonDeviceID = 'anon_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('parkkarma_anon_id', anonDeviceID);
+        }
 
-        // Διαχείριση Google Login με Πολλαπλές Θέσεις
         async function handleCredentialResponse(response) {
             let localSpots = JSON.parse(localStorage.getItem('parkkarma_saved_spots')) || [];
 
@@ -161,7 +168,7 @@
                 userEmail = data.email;
                 localStorage.setItem('parkkarma_email', userEmail);
                 
-                localStorage.removeItem('parkkarma_saved_spots'); // Καθαρισμός τοπικής μνήμης
+                localStorage.removeItem('parkkarma_saved_spots'); 
 
                 savedPositions = data.saved_locations || [];
                 showAllSavedMarkers();
@@ -193,7 +200,6 @@
             } catch (e) { console.log("Σφάλμα σύνδεσης..."); }
         }
 
-        // Φόρτωση κατά το άνοιγμα
         if (userEmail) {
             setTimeout(() => { updateUIForLoggedInUser(0); fetchKarma(); }, 500);
         } else {
@@ -208,14 +214,12 @@
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri', maxZoom: 19 }).addTo(map);
         window.addEventListener('resize', () => map.invalidateSize());
 
-        // Εμφάνιση όλων των Χρυσών Πινεζών (έως 10) στον χάρτη
         function showAllSavedMarkers() {
             savedMarkers.forEach(m => map.removeLayer(m));
             savedMarkers = [];
             
             savedPositions.forEach((spot, index) => {
                 let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);"><b>Αποθηκευμένη θέση #${index+1}</b><br><input type="file" id="savedPhotoInput_${index}" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitSavedWithPhoto(${index}, ${spot.lat}, ${spot.lng})">📢 Δημοσίευσε</button><button class="occupy-btn" onclick="deleteSavedMarker(${spot.id}, ${index})">🗑️ Διαγραφή</button></div>`;
-                
                 let marker = L.marker([spot.lat, spot.lng], { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] }) }).addTo(map).bindPopup(popupContent);
                 savedMarkers.push(marker);
             });
@@ -233,18 +237,14 @@
             }
         }
 
-        // Διαγραφή συγκεκριμένης πινέζας
         async function deleteSavedMarker(dbId, localIndex) { 
             if (userEmail && dbId) {
                 await fetch(`${API_BASE_URL}/delete-saved-location/${dbId}`, { method: 'DELETE' });
             }
-            
-            // Αφαίρεση από τη λίστα
             savedPositions.splice(localIndex, 1);
             if (!userEmail) {
                 localStorage.setItem('parkkarma_saved_spots', JSON.stringify(savedPositions));
             }
-            
             map.closePopup(); 
             showAllSavedMarkers();
         }
@@ -280,7 +280,7 @@
                     newSpot.id = data.id;
                 }
             } else {
-                newSpot.id = Date.now(); // Προσωρινό ID για τους ανώνυμους
+                newSpot.id = Date.now();
             }
             
             savedPositions.push(newSpot);
@@ -332,13 +332,11 @@
             }
         }
 
-        // Έξυπνο κλικ για κλείσιμο popups/μενού πριν τη δημιουργία νέας θέσης
         map.on('click', function(e) {
             let menuOverlay = document.getElementById('menu-overlay');
             let isMenuOpen = menuOverlay && menuOverlay.style.display === 'block';
             let isPopupOpen = map._popup && map._popup._isOpen;
 
-            // Αν είναι ανοιχτό το μενού, κάποιο popup ή η προσωρινή πινέζα, απλά κλείστα!
             if (isMenuOpen || isPopupOpen || lastClickedMarker) {
                 if (isMenuOpen) menuOverlay.style.display = 'none';
                 if (lastClickedMarker) {
@@ -346,10 +344,9 @@
                     lastClickedMarker = null;
                 }
                 map.closePopup();
-                return; // Σταματάει εδώ. Δεν ανοίγει νέο πινακάκι με το 1ο πάτημα.
+                return;
             }
 
-            // Δεύτερο πάτημα (αφού όλα είναι καθαρά): Ανοίγει το πινακάκι για νέα θέση
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
             let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width: 180px;"><b>Νέα θέση</b><br><button class="save-btn" style="margin-top:5px; width:100%;" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br><input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br><button class="btn-action" style="margin-top:5px; width:100%;" onclick="submitPosition(false)">📢 Δημοσίευσε</button><button class="occupy-btn" style="margin-top:5px; width:100%;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button></div>`;
             lastClickedMarker.bindPopup(popupContent).openPopup();
@@ -400,7 +397,7 @@
                     showAllSavedMarkers(); 
                     alert("Η θέση αποθηκεύτηκε με επιτυχία!"); 
                     lastClickedMarker.closePopup();
-                    lastClickedMarker = null; // Καθαρισμός μεταβλητής
+                    lastClickedMarker = null;
                 }, (err) => { alert("Πρέπει να δώσεις άδεια τοποθεσίας για να αποθηκεύσεις."); }, { enableHighAccuracy: true });
             } else { alert("Το κινητό σου δεν υποστηρίζει GPS."); }
         }
@@ -415,10 +412,37 @@
             map.closePopup(); loadSpots();
         }
 
+        // ΝΕΟ: Λειτουργίες Κράτησης (Έρχομαι)
+        async function bookSpot(spotId) {
+            let ident = userEmail ? userEmail : anonDeviceID;
+            let res = await fetch(`${API_BASE_URL}/book-spot/${spotId}?occupier_id=${ident}`, { method: 'POST' });
+            if (res.ok) {
+                alert("🚙 Η θέση κρατήθηκε για 5 λεπτά! Οι άλλοι οδηγοί βλέπουν τώρα μια Μπλε Πινέζα.");
+                map.closePopup();
+                loadSpots();
+            } else {
+                let error = await res.json();
+                alert(error.detail || "Δεν μπορέσαμε να κάνουμε κράτηση.");
+            }
+        }
+
+        async function unbookSpot(spotId) {
+            let ident = userEmail ? userEmail : anonDeviceID;
+            let res = await fetch(`${API_BASE_URL}/unbook-spot/${spotId}?occupier_id=${ident}`, { method: 'POST' });
+            if (res.ok) {
+                alert("Η κράτησή σου ακυρώθηκε. Η θέση είναι ξανά ελεύθερη.");
+                map.closePopup();
+                loadSpots();
+            }
+        }
+
         async function loadSpots() {
             let res = await fetch(`${API_BASE_URL}/search-spots`);
             let data = await res.json();
+            let ident = userEmail ? userEmail : anonDeviceID;
+            
             markers.forEach(m => map.removeLayer(m)); markers = [];
+            
             data.spots.forEach(spot => {
                 let dateStr = spot.created_at;
                 if (!dateStr.includes('Z') && !dateStr.includes('+')) { dateStr += 'Z'; }
@@ -426,13 +450,31 @@
                 let remaining = spot.minutes_until_free - Math.floor((new Date() - created) / 60000);
                 
                 if (remaining > 0) {
+                    let isBooked = spot.is_booked;
+                    let bookedByMe = isBooked && spot.booked_by === ident;
+                    
                     let color = remaining <= 3 ? 'red' : 'green';
+                    if (isBooked) color = 'blue'; // Η πινέζα γίνεται μπλε αν είναι κρατημένη!
+                    
                     let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     
-                    // Διορθωμένο URL για έναρξη πλοήγησης στους Χάρτες Google
+                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving')">🚗 Οδηγίες GPS</button>`;
+                    
+                    if (isBooked) {
+                        if (bookedByMe) {
+                            buttonsHtml += `<button class="save-btn" onclick="unbookSpot(${spot.id})">✖️ Ακύρωση 'Έρχομαι'</button>`;
+                            buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Έφτασα! (Κατάληψη)</button>`;
+                        } else {
+                            buttonsHtml += `<p style="color:blue; font-weight:bold; margin-top:10px; border: 2px solid blue; padding: 5px; border-radius: 5px;">🔵 Οδηγός καθ' οδόν!</p>`;
+                        }
+                    } else {
+                        buttonsHtml += `<button class="btn-action" style="background-color: #17a2b8;" onclick="bookSpot(${spot.id})">🙋‍♂️ Έρχομαι!</button>`;
+                        buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Κατειλημμένη</button>`;
+                    }
+                    
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving')">🚗 Οδηγίες</button><button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Κατειλημμένη</button></div>`);
+                        .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width:180px;">${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br>${buttonsHtml}</div>`);
                     markers.push(marker);
                 }
             });
