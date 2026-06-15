@@ -186,6 +186,13 @@
             localStorage.setItem('parkkarma_anon_id', anonDeviceID);
         }
 
+        // ΝΕΟ: Μηχανισμός ελέγχου κλεισίματος popup για το δεύτερο κλικ
+        let popupJustClosed = false;
+        map.on('popupclose', function() {
+            popupJustClosed = true;
+            setTimeout(() => { popupJustClosed = false; }, 200);
+        });
+
         async function getAddress(lat, lng) {
             try {
                 let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
@@ -453,17 +460,18 @@
             }
         }
 
+        // Ο ΜΗΧΑΝΙΣΜΟΣ ΠΟΥ ΔΙΟΡΘΩΝΕΙ ΤΟ ΠΡΟΒΛΗΜΑ ΜΕ ΤΟ ΔΕΥΤΕΡΟ ΚΛΙΚ
         map.on('click', async function(e) {
             let menuOverlay = document.getElementById('menu-overlay');
             let isMenuOpen = menuOverlay && menuOverlay.style.display === 'block';
-            let isPopupOpen = !!map._popup; 
 
-            if (isMenuOpen || isPopupOpen || lastClickedMarker || searchMarker) {
+            // Ελέγχουμε αν υπάρχει ήδη ανοιχτό popup, Η αν ένα popup μόλις έκλεισε από αυτό ακριβώς το κλικ
+            if (isMenuOpen || !!map._popup || popupJustClosed || lastClickedMarker || searchMarker) {
                 if (isMenuOpen) menuOverlay.style.display = 'none';
                 if (lastClickedMarker) { map.removeLayer(lastClickedMarker); lastClickedMarker = null; }
                 if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
                 map.closePopup(); 
-                return; 
+                return; // Σταματάει εδώ την εκτέλεση! Το δεύτερο (καθαρό) κλικ θα περάσει κανονικά από κάτω.
             }
 
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
