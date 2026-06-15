@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ParkKarma</title>
     
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffc107">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -120,7 +123,7 @@
             .karma-display { padding: 5px 8px; font-size: 11px; }
             .filter-container { bottom: 10px; width: 95%; padding: 5px; gap: 4px; flex-wrap: nowrap; }
             .filter-select { font-size: 11px; padding: 5px; }
-            .leaflet-control-geocoder { max-width: 180px; } /* Μικραίνει την μπάρα αναζήτησης */
+            .leaflet-control-geocoder { max-width: 180px; } 
             .marquee-container { font-size: 12px; padding: 5px 0; }
         }
     </style>
@@ -252,7 +255,7 @@
                 document.body.classList.remove('dark-mode');
                 baseLayer.setUrl(mapLayerLight);
             }
-            toggleMenu(); // Κλείνει το μενού μετά την επιλογή
+            toggleMenu(); 
         }
 
         function getBadge(karma) {
@@ -308,7 +311,7 @@
             let icon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
             
             myCarMarker = L.marker([pos.lat, pos.lng], {icon: icon}).addTo(map)
-                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('http://googleusercontent.com/maps.google.com/maps?daddr=${pos.lat},${pos.lng}&dirflg=w', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
+                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}&travelmode=walking', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
         }
         function findMyCar() {
             let data = localStorage.getItem('parkkarma_my_car');
@@ -644,7 +647,7 @@
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let tagHtml = spot.tag ? `<div class="spot-tag">${spot.tag}</div><br>` : "";
                     
-                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('http://googleusercontent.com/maps.google.com/maps?daddr=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')">🚗 Οδηγίες GPS</button>`;
+                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
                         if (bookedByMe) {
@@ -684,6 +687,14 @@
         resetUserMarker(); loadSpots(); 
         setInterval(loadSpots, 5000);
         setInterval(fetchKarma, 10000);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker Registered!'))
+                    .catch(err => console.log('Service Worker Failed:', err));
+            });
+        }
     </script>
 </body>
 </html>
