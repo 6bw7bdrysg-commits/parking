@@ -24,7 +24,10 @@ class DBParkingSpotV2(Base):
     photo = Column(String, nullable=True) 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # ΝΕΑ ΠΕΔΙΑ ΓΙΑ ΤΟ "ΕΡΧΟΜΑΙ!" (ΚΡΑΤΗΣΗ)
+    # ΚΡΑΤΗΣΗ
     is_booked = Column(Boolean, default=False)
     booked_by = Column(String, nullable=True)
     booked_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # ΝΕΟ: ΕΤΙΚΕΤΕΣ (TAGS)
+    tag = Column(String, nullable=True)
