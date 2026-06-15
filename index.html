@@ -50,7 +50,6 @@
             text-align: center; pointer-events: auto;
         }
         
-        /* ΝΕΟ: Εμφάνιση Φίλτρων */
         .filter-container {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000;
             background: rgba(255, 255, 255, 0.95); padding: 10px; border-radius: 12px;
@@ -457,16 +456,14 @@
         map.on('click', async function(e) {
             let menuOverlay = document.getElementById('menu-overlay');
             let isMenuOpen = menuOverlay && menuOverlay.style.display === 'block';
-            let isPopupOpen = map._popup && map._popup._isOpen;
+            let isPopupOpen = !!map._popup; 
 
             if (isMenuOpen || isPopupOpen || lastClickedMarker || searchMarker) {
                 if (isMenuOpen) menuOverlay.style.display = 'none';
                 if (lastClickedMarker) { map.removeLayer(lastClickedMarker); lastClickedMarker = null; }
-                if (searchMarker && (!map._popup || map._popup._source !== searchMarker)) {
-                    map.removeLayer(searchMarker); searchMarker = null;
-                }
-                map.closePopup();
-                return;
+                if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
+                map.closePopup(); 
+                return; 
             }
 
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
@@ -584,13 +581,11 @@
             }
         }
 
-        // ΝΕΟ: Εφαρμογή Φίλτρων κατά τη Φόρτωση
         async function loadSpots() {
             let res = await fetch(`${API_BASE_URL}/search-spots`);
             let data = await res.json();
             let ident = userEmail ? userEmail : anonDeviceID;
             
-            // Παίρνουμε τις τιμές από τα dropdowns των φίλτρων
             let filterStatus = document.getElementById('filterStatus').value;
             let filterTag = document.getElementById('filterTag').value;
             
@@ -609,14 +604,12 @@
                     let color = remaining <= 3 ? 'red' : 'green';
                     if (isBooked) color = 'violet'; 
                     
-                    // --- ΕΦΑΡΜΟΓΗ ΦΙΛΤΡΩΝ (Έλεγχος) ---
-                    if (filterStatus === 'green' && color !== 'green') return; // Προσπερνάει όσες δεν ταιριάζουν
+                    if (filterStatus === 'green' && color !== 'green') return; 
                     if (filterStatus === 'red' && color !== 'red') return;
                     if (filterStatus === 'violet' && color !== 'violet') return;
                     
                     if (filterTag === 'photo' && !spot.photo) return;
                     if (filterTag !== 'all' && filterTag !== 'photo' && spot.tag !== filterTag) return;
-                    // -----------------------------------
                     
                     let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
