@@ -4,9 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ParkKarma</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: sans-serif; }
         #map { height: 100%; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
@@ -215,6 +221,17 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
             attribution: '© OpenStreetMap contributors', 
             maxZoom: 19 
+        }).addTo(map);
+
+        // Προσθήκη Μπάρας Αναζήτησης Διεύθυνσης (Geocoder)
+        L.Control.geocoder({
+            position: 'topleft', // Εμφανίζεται πάνω αριστερά κάτω από το zoom
+            defaultMarkGeocode: false, // Δεν βάζουμε αυτόματα μόνιμη πινέζα
+            placeholder: 'Αναζήτηση διεύθυνσης...',
+            errorMessage: 'Η διεύθυνση δεν βρέθηκε.'
+        }).on('markgeocode', function(e) {
+            var bbox = e.geocode.bbox;
+            map.fitBounds(bbox); // Ζουμάρει στη διεύθυνση που βρήκε
         }).addTo(map);
 
         window.addEventListener('resize', () => map.invalidateSize());
