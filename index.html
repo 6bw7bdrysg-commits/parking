@@ -74,6 +74,9 @@
         .save-btn { background-color: #ffc107; color: black; }
         .close-modal { background-color: #007bff; color: white; }
         .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
+        
+        /* Μικρό στυλ για τη διεύθυνση */
+        .address-text { color: #555; font-size: 13px; margin: 5px 0; font-weight: normal; }
     </style>
 </head>
 <body>
@@ -147,15 +150,33 @@
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
-        var savedPositions = [], markers = [], savedMarkers = [], userMarker = null, lastClickedMarker = null;
+        var savedPositions = [], markers = [], savedMarkers = [], userMarker = null, lastClickedMarker = null, searchMarker = null;
 
         let userEmail = localStorage.getItem('parkkarma_email') || null;
         
-        // Μοναδικό ID για ανώνυμους (για να ξέρει ο server ποιος έκανε την κράτηση)
         let anonDeviceID = localStorage.getItem('parkkarma_anon_id');
         if (!anonDeviceID) {
             anonDeviceID = 'anon_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('parkkarma_anon_id', anonDeviceID);
+        }
+
+        // Συνάρτηση για δυναμική εύρεση Διεύθυνσης (Reverse Geocoding)
+        async function getAddress(lat, lng) {
+            try {
+                let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                let data = await res.json();
+                if (data && data.address) {
+                    let street = data.address.road || data.address.pedestrian || "";
+                    let number = data.address.house_number || "";
+                    let city = data.address.city || data.address.town || data.address.village || "";
+                    let result = `${street} ${number}, ${city}`.trim();
+                    result = result.replace(/^,\s*/, '').replace(/,\s*$/, ''); // Καθαρισμός κόμματων
+                    return result || "Άγνωστη διεύθυνση";
+                }
+                return "Διεύθυνση μη διαθέσιμη";
+            } catch (e) {
+                return "Σφάλμα διεύθυνσης";
+            }
         }
 
         async function handleCredentialResponse(response) {
@@ -217,7 +238,7 @@
         function openModal(id) { document.getElementById(id).style.display = 'block'; toggleMenu(); }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // Αλλαγή Χάρτη: OpenStreetMap αντί για Esri (Δορυφορικό)
+        // Χάρτης: OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
             attribution: '© OpenStreetMap contributors', 
             maxZoom: 19 
@@ -225,13 +246,21 @@
 
         // Προσθήκη Μπάρας Αναζήτησης Διεύθυνσης (Geocoder)
         L.Control.geocoder({
-            position: 'topleft', // Εμφανίζεται πάνω αριστερά κάτω από το zoom
-            defaultMarkGeocode: false, // Δεν βάζουμε αυτόματα μόνιμη πινέζα
+            position: 'topleft',
+            defaultMarkGeocode: false, // Το διαχειριζόμαστε εμείς από κάτω
             placeholder: 'Αναζήτηση διεύθυνσης...',
             errorMessage: 'Η διεύθυνση δεν βρέθηκε.'
         }).on('markgeocode', function(e) {
             var bbox = e.geocode.bbox;
-            map.fitBounds(bbox); // Ζουμάρει στη διεύθυνση που βρήκε
+            map.fitBounds(bbox); // Ζουμάρει στη διεύθυνση
+            
+            // Καθαρίζει παλιά πινέζα αναζήτησης
+            if (searchMarker) map.removeLayer(searchMarker);
+            
+            // Προσθέτει νέα πινέζα στο αποτέλεσμα
+            searchMarker = L.marker(e.geocode.center).addTo(map)
+                .bindPopup(`<div style="text-align:center; padding:5px;"><b>Αποτέλεσμα Αναζήτησης:</b><br><span class="address-text">📍 ${e.geocode.name}</span></div>`)
+                .openPopup();
         }).addTo(map);
 
         window.addEventListener('resize', () => map.invalidateSize());
@@ -241,8 +270,26 @@
             savedMarkers = [];
             
             savedPositions.forEach((spot, index) => {
-                let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);"><b>Αποθηκευμένη θέση #${index+1}</b><br><input type="file" id="savedPhotoInput_${index}" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitSavedWithPhoto(${index}, ${spot.lat}, ${spot.lng})">📢 Δημοσίευσε</button><button class="occupy-btn" onclick="deleteSavedMarker(${spot.id}, ${index})">🗑️ Διαγραφή</button></div>`;
+                let popupId = `saved_addr_${index}`;
+                let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+                    <b>Αποθηκευμένη θέση #${index+1}</b><br>
+                    <div class="address-text" id="${popupId}">📍 Φόρτωση διεύθυνσης...</div>
+                    <input type="file" id="savedPhotoInput_${index}" accept="image/*" style="width:100%; margin:5px 0;">
+                    <button class="btn-action" onclick="submitSavedWithPhoto(${index}, ${spot.lat}, ${spot.lng})">📢 Δημοσίευσε</button>
+                    <button class="occupy-btn" onclick="deleteSavedMarker(${spot.id}, ${index})">🗑️ Διαγραφή</button>
+                </div>`;
+                
                 let marker = L.marker([spot.lat, spot.lng], { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] }) }).addTo(map).bindPopup(popupContent);
+                
+                // Φορτώνει τη διεύθυνση μόνο όταν ο χρήστης πατήσει την πινέζα
+                marker.on('click', async () => {
+                    let el = document.getElementById(popupId);
+                    if(el && el.innerText.includes('Φόρτωση')) {
+                        let addr = await getAddress(spot.lat, spot.lng);
+                        if(document.getElementById(popupId)) document.getElementById(popupId).innerText = `📍 ${addr}`;
+                    }
+                });
+                
                 savedMarkers.push(marker);
             });
         }
@@ -273,11 +320,24 @@
 
         function resetUserMarker() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
                     const lat = pos.coords.latitude; const lng = pos.coords.longitude;
                     if (userMarker) userMarker.setLatLng([lat, lng]); else userMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
-                    userMarker.bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);"><b>Είσαι εδώ!</b><br><button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση</button><input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;"><button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button></div>`).openPopup();
+                    
+                    let popupId = "user_spot_addr";
+                    userMarker.bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+                        <b>Είσαι εδώ!</b><br>
+                        <div class="address-text" id="${popupId}">📍 Φόρτωση διεύθυνσης...</div>
+                        <button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση</button>
+                        <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
+                        <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button>
+                    </div>`).openPopup();
+                    
                     map.setView([lat, lng], 17);
+                    
+                    let addr = await getAddress(lat, lng);
+                    let addrEl = document.getElementById(popupId);
+                    if(addrEl) addrEl.innerText = `📍 ${addr}`;
                 }, null, { enableHighAccuracy: true });
             }
         }
@@ -354,26 +414,39 @@
             }
         }
 
-        map.on('click', function(e) {
+        map.on('click', async function(e) {
             let menuOverlay = document.getElementById('menu-overlay');
             let isMenuOpen = menuOverlay && menuOverlay.style.display === 'block';
             let isPopupOpen = map._popup && map._popup._isOpen;
 
-            if (isMenuOpen || isPopupOpen || lastClickedMarker) {
+            if (isMenuOpen || isPopupOpen || lastClickedMarker || searchMarker) {
                 if (isMenuOpen) menuOverlay.style.display = 'none';
-                if (lastClickedMarker) {
-                    map.removeLayer(lastClickedMarker);
-                    lastClickedMarker = null;
+                if (lastClickedMarker) { map.removeLayer(lastClickedMarker); lastClickedMarker = null; }
+                if (searchMarker && (!map._popup || map._popup._source !== searchMarker)) {
+                    map.removeLayer(searchMarker); searchMarker = null;
                 }
                 map.closePopup();
                 return;
             }
 
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
-            let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width: 180px;"><b>Νέα θέση</b><br><button class="save-btn" style="margin-top:5px; width:100%;" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br><input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br><button class="btn-action" style="margin-top:5px; width:100%;" onclick="submitPosition(false)">📢 Δημοσίευσε</button><button class="occupy-btn" style="margin-top:5px; width:100%;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button></div>`;
+            let popupId = "new_spot_addr";
+            let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width: 180px;">
+                <b>Νέα θέση</b><br>
+                <div class="address-text" id="${popupId}">📍 Φόρτωση διεύθυνσης...</div>
+                <button class="save-btn" style="margin-top:5px; width:100%;" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br>
+                <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br>
+                <button class="btn-action" style="margin-top:5px; width:100%;" onclick="submitPosition(false)">📢 Δημοσίευσε</button>
+                <button class="occupy-btn" style="margin-top:5px; width:100%;" onclick="cancelClickedMarker()">✖️ Ακύρωση</button>
+            </div>`;
+            
             lastClickedMarker.bindPopup(popupContent).openPopup();
             lastClickedMarker.bringToFront();
             L.DomEvent.disableClickPropagation(lastClickedMarker._popup._container);
+            
+            let addr = await getAddress(e.latlng.lat, e.latlng.lng);
+            let addrEl = document.getElementById(popupId);
+            if(addrEl) addrEl.innerText = `📍 ${addr}`;
         });
 
         function cancelClickedMarker() { if (lastClickedMarker) map.removeLayer(lastClickedMarker); lastClickedMarker = null; map.closePopup(); }
@@ -475,13 +548,12 @@
                     let bookedByMe = isBooked && spot.booked_by === ident;
                     
                     let color = remaining <= 3 ? 'red' : 'green';
-                    if (isBooked) color = 'violet'; // Χρώμα Μοβ!
+                    if (isBooked) color = 'violet'; 
                     
                     let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     
-                    // Επίσημο URL Google Maps Navigation
-                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving')">🚗 Οδηγίες GPS</button>`;
+                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/...${spot.latitude},${spot.longitude}')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
                         if (bookedByMe) {
@@ -495,8 +567,23 @@
                         buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Κατειλημμένη</button>`;
                     }
                     
+                    let popupId = `pub_addr_${spot.id}`;
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width:180px;">${photoHtml}<b>Λήγει σε: ${remaining} λεπτά</b><br>${buttonsHtml}</div>`);
+                        .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width:180px;">
+                            ${photoHtml}
+                            <div class="address-text" id="${popupId}">📍 Φόρτωση διεύθυνσης...</div>
+                            <b>Λήγει σε: ${remaining} λεπτά</b><br>${buttonsHtml}
+                        </div>`);
+                        
+                    // Φορτώνει τη διεύθυνση μόνο όταν ο χρήστης πατήσει την πινέζα
+                    marker.on('click', async () => {
+                        let el = document.getElementById(popupId);
+                        if(el && el.innerText.includes('Φόρτωση')) {
+                            let addr = await getAddress(spot.latitude, spot.longitude);
+                            if(document.getElementById(popupId)) document.getElementById(popupId).innerText = `📍 ${addr}`;
+                        }
+                    });
+                        
                     markers.push(marker);
                 }
             });
