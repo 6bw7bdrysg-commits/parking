@@ -66,7 +66,7 @@ class ParkingSpotCreate(BaseModel):
     longitude: float
     minutes_until_free: int
     photo: Optional[str] = None
-    tag: Optional[str] = None # ΝΕΟ
+    tag: Optional[str] = None 
 
 class LocalSpot(BaseModel):
     lat: float
@@ -159,7 +159,7 @@ def release_parking_spot(spot: ParkingSpotCreate, db: Session = Depends(get_db))
         longitude=spot.longitude, 
         minutes_until_free=spot.minutes_until_free,
         photo=spot.photo,
-        tag=spot.tag # ΝΕΟ
+        tag=spot.tag 
     )
     db.add(new_spot)
     db.commit()
@@ -177,7 +177,7 @@ def get_active_parking_spots(db: Session = Depends(get_db)):
             "longitude": spot.longitude,
             "minutes_until_free": spot.minutes_until_free,
             "photo": spot.photo,
-            "tag": spot.tag, # ΝΕΟ
+            "tag": spot.tag, 
             "created_at": spot.created_at.isoformat() if spot.created_at else None,
             "is_booked": spot.is_booked,
             "booked_by": spot.booked_by,
@@ -225,3 +225,22 @@ def occupy_spot(spot_id: int, occupier_email: str, db: Session = Depends(get_db)
     db.delete(spot)
     db.commit()
     return {"status": "success"}
+
+# ΝΕΟ: Επιστρέφει τους κορυφαίους χρήστες κρύβοντας μέρος του email
+@app.get("/leaderboard")
+def get_leaderboard(db: Session = Depends(get_db)):
+    top_users = db.query(models.DBAppUser).filter(models.DBAppUser.karma > 0).order_by(models.DBAppUser.karma.desc()).limit(10).all()
+    
+    leaderboard = []
+    for user in top_users:
+        email = user.device_id
+        if "@" in email:
+            name_part, domain_part = email.split("@")
+            masked_name = name_part[:3] + "***" if len(name_part) > 3 else name_part[:1] + "***"
+            masked_email = f"{masked_name}@{domain_part}"
+        else:
+            masked_email = "Ανώνυμος Οδηγός"
+            
+        leaderboard.append({"user": masked_email, "karma": user.karma})
+        
+    return {"leaderboard": leaderboard}
