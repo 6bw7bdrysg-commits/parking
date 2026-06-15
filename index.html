@@ -24,8 +24,8 @@
         .marquee-container {
             position: absolute; top: 0; left: 0; width: 100%;
             background: rgba(0, 0, 0, 0.8); color: white;
-            padding: 10px 0; overflow: hidden; z-index: 2000;
-            white-space: nowrap; pointer-events: none;
+            padding: 8px 0; overflow: hidden; z-index: 2000;
+            white-space: nowrap; pointer-events: none; font-size: 14px;
         }
         .marquee-text {
             display: inline-block; padding-left: 100%;
@@ -34,47 +34,47 @@
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
         
         .controls-container {
-            position: absolute; top: 60px; right: 10px; z-index: 1000;
-            display: flex; flex-direction: column; gap: 10px;
+            position: absolute; top: 45px; right: 10px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 8px;
         }
         
         .karma-display {
-            background: #ffc107; padding: 10px 15px; border-radius: 5px;
+            background: #ffc107; padding: 8px 12px; border-radius: 5px;
             font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            text-align: center; color: black; border: 2px solid #e0a800; font-size: 14px;
+            text-align: center; color: black; border: 2px solid #e0a800; font-size: 13px;
         }
         
-        .menu-btn, .my-location-btn, .theme-btn, .my-car-btn {
-            background: white; padding: 10px 15px; border-radius: 5px;
+        .menu-btn, .my-location-btn, .my-car-btn {
+            background: white; padding: 8px 12px; border-radius: 5px;
             cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            text-align: center; pointer-events: auto; transition: 0.3s; color: #333;
+            text-align: center; pointer-events: auto; transition: 0.3s; color: #333; font-size: 13px;
         }
         
         .filter-container {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000;
-            background: rgba(255, 255, 255, 0.95); padding: 10px; border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.4); display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-            width: calc(100% - 40px); max-width: 400px; backdrop-filter: blur(5px); transition: 0.3s;
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); z-index: 1000;
+            background: rgba(255, 255, 255, 0.95); padding: 8px; border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4); display: flex; gap: 6px; flex-wrap: nowrap; justify-content: center;
+            width: 90%; max-width: 500px; backdrop-filter: blur(5px); transition: 0.3s;
         }
-        .filter-select { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; min-width: 140px; background: white; font-weight: bold; color: #333; }
+        .filter-select { flex: 1; padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px; background: white; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         #menu-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 250px; height: 100%;
             background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
-            z-index: 3000; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.3); transition: 0.3s;
+            z-index: 3000; padding: 20px; box-shadow: 2px 0 5px rgba(0,0,0,0.3); transition: 0.3s; overflow-y: auto;
         }
         .close-menu { cursor: pointer; color: red; font-size: 20px; font-weight: bold; margin-bottom: 20px; }
 
         .modal {
-            display: none; position: fixed; top: 10%; left: 10%; width: 80%; height: 80%;
+            display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 85%;
             background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-            z-index: 4000; border-radius: 15px; padding: 20px;
+            z-index: 4000; border-radius: 15px; padding: 15px; box-sizing: border-box;
             box-shadow: 0 0 20px rgba(0,0,0,0.3); overflow-y: auto; transition: 0.3s;
         }
 
         .btn-action, .nav-btn, .occupy-btn, .save-btn, .close-modal, .car-btn { 
-            border: none; padding: 12px; width: 100%; margin-top: 8px; 
-            cursor: pointer; font-size: 16px; border-radius: 8px; font-weight: bold; color: white;
+            border: none; padding: 10px; width: 100%; margin-top: 8px; 
+            cursor: pointer; font-size: 15px; border-radius: 8px; font-weight: bold; color: white;
         }
         .btn-action { background-color: #28a745; }
         .nav-btn { background-color: #007bff; }
@@ -86,22 +86,22 @@
         
         .address-text { color: #555; font-size: 13px; margin: 5px 0; font-weight: normal; }
         .spot-tag { background: #e9ecef; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 13px; display: inline-block; margin-bottom: 5px; border: 1px solid #ccc; font-weight: bold; }
-        .tag-dropdown { width: 100%; padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
+        .tag-dropdown { width: 100%; padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; }
 
         .leaderboard-list { margin-top: 15px; padding: 0; list-style: none; }
-        .leaderboard-item { padding: 12px 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
-        .leaderboard-karma { background: #ffc107; padding: 4px 10px; border-radius: 12px; font-weight: bold; color: black; }
+        .leaderboard-item { padding: 12px 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
+        .leaderboard-karma { background: #ffc107; padding: 4px 10px; border-radius: 12px; font-weight: bold; color: black; font-size: 13px;}
 
         /* RADAR TOAST NOTIFICATION */
         .toast-notification {
-            position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
-            background: #28a745; color: white; padding: 12px 20px; border-radius: 30px;
+            position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
+            background: #28a745; color: white; padding: 10px 15px; border-radius: 30px;
             font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 5000;
-            display: none; font-size: 15px;
+            display: none; font-size: 14px; white-space: nowrap;
         }
 
         /* DARK MODE STYLES */
-        body.dark-mode .menu-btn, body.dark-mode .my-location-btn, body.dark-mode .theme-btn, body.dark-mode .my-car-btn { background: #222; color: #fff; border: 1px solid #444; }
+        body.dark-mode .menu-btn, body.dark-mode .my-location-btn, body.dark-mode .my-car-btn { background: #222; color: #fff; border: 1px solid #444; }
         body.dark-mode .filter-container { background: rgba(30, 30, 30, 0.95); }
         body.dark-mode .filter-select { background: #333; color: white; border: 1px solid #555; }
         body.dark-mode #menu-overlay, body.dark-mode .modal { background: rgba(30, 30, 30, 0.95); color: white; }
@@ -112,6 +112,17 @@
         .popup-inner { text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width: 180px; }
         body.dark-mode .popup-inner { background:#222; color:white; }
         body.dark-mode .tag-dropdown { background: #333; color: white; border: 1px solid #555; }
+
+        /* RESPONSIVE CSS ΓΙΑ ΚΙΝΗΤΑ (Μίκρυνση Μενού) */
+        @media (max-width: 600px) {
+            .controls-container { top: 35px; right: 5px; gap: 6px; }
+            .menu-btn, .my-location-btn, .my-car-btn { padding: 6px 8px; font-size: 12px; }
+            .karma-display { padding: 5px 8px; font-size: 11px; }
+            .filter-container { bottom: 10px; width: 95%; padding: 5px; gap: 4px; flex-wrap: nowrap; }
+            .filter-select { font-size: 11px; padding: 5px; }
+            .leaflet-control-geocoder { max-width: 180px; } /* Μικραίνει την μπάρα αναζήτησης */
+            .marquee-container { font-size: 12px; padding: 5px 0; }
+        }
     </style>
 </head>
 <body>
@@ -128,13 +139,13 @@
             <option value="all">🚦 Όλες οι Καταστάσεις</option>
             <option value="green">🟢 Μόνο Ελεύθερες</option>
             <option value="red">🔴 Λήγουν Σύντομα</option>
-            <option value="violet">🟣 Κρατημένες (Έρχομαι)</option>
+            <option value="violet">🟣 Κρατημένες</option>
         </select>
         <select id="filterTag" class="filter-select" onchange="loadSpots()">
             <option value="all">🏷️ Όλες οι Παροχές</option>
-            <option value="photo">📸 Μόνο με Φωτογραφία</option>
+            <option value="photo">📸 Με Φωτογραφία</option>
             <option value="🚙 Χωράει μεγάλο όχημα">🚙 Μεγάλο όχημα</option>
-            <option value="♿ Θέση ΑμεΑ / Ράμπα">♿ Θέση ΑμεΑ / Ράμπα</option>
+            <option value="♿ Θέση ΑμεΑ / Ράμπα">♿ Θέση ΑμεΑ</option>
             <option value="🌳 Κάτω από δέντρο/Σκιά">🌳 Σκιά</option>
             <option value="⚡ Κοντά σε φορτιστή EV">⚡ Φορτιστής EV</option>
         </select>
@@ -148,7 +159,6 @@
             </div>
             <div class="g_id_signin" data-type="standard"></div>
         </div>
-        <div class="theme-btn" onclick="toggleTheme()">🌞/🌙 Θέμα</div>
         <div class="menu-btn" onclick="toggleMenu()">☰ Μενού</div>
         <div class="my-location-btn" onclick="resetUserMarker()">📍 Επαναφορά μου</div>
         <div class="my-car-btn" onclick="findMyCar()">🅿️ Το αμάξι μου</div>
@@ -159,6 +169,7 @@
         <h2 style="margin-top: 0;">Μενού</h2>
         <ul style="list-style: none; padding: 0;">
             <li id="logout-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; color: red; font-weight: bold;" onclick="handleLogout()">🚪 Αποσύνδεση</li>
+            <li onclick="toggleTheme()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold;">🌞/🌙 Σκοτεινό Θέμα</li>
             <li onclick="openLeaderboard()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold;">🏆 Top Οδηγοί (Leaderboard)</li>
             <li onclick="openModal('instructions-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">ℹ️ Οδηγίες Χρήσης</li>
             <li onclick="openModal('about-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">👥 Σχετικά με εμάς</li>
@@ -168,7 +179,7 @@
 
     <div id="leaderboard-modal" class="modal">
         <h2 style="color:#ffc107; text-align:center; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">🏆 Top Οδηγοί</h2>
-        <p style="text-align:center; color:#888; margin-top:-10px;">Οι χρήστες που βοηθούν περισσότερο την πόλη!</p>
+        <p style="text-align:center; color:#888; margin-top:-10px; font-size: 14px;">Οι χρήστες που βοηθούν περισσότερο την πόλη!</p>
         <ul id="leaderboard-list" class="leaderboard-list">
             <p style="text-align:center;">Φόρτωση...</p>
         </ul>
@@ -187,6 +198,9 @@
         <p><b>2. Γίνεσαι μέλος μιας μεγάλης παρέας</b><br>Όταν φεύγεις από μια θέση, μην την αφήνεις να πάει χαμένη!<br>
         • Πάτα "Δημοσίευσε" και ενημέρωσε τους υπόλοιπους ότι αδειάζεις. <b>(Κερδίζεις +10 Karma!)</b><br>
         • Αν βγάλεις μια φωτογραφία, βοηθάς τους άλλους να αναγνωρίσουν τη θέση αμέσως.</p>
+        <p><b>3. Smart Planning & Εύρεση Αυτοκινήτου</b><br>
+        • Αποθήκευσε το αυτοκίνητό σου (Μαύρη Πινέζα) για να το βρεις εύκολα μετά.<br>
+        • Αποθήκευσε τη θέση (Χρυσή Πινέζα) και δημοσίευσέ τη 5 λεπτά πριν φύγεις!</p>
         <button class="close-modal" onclick="closeModal('instructions-modal')">Κλείσιμο</button>
     </div>
 
@@ -218,7 +232,6 @@
             localStorage.setItem('parkkarma_anon_id', anonDeviceID);
         }
 
-        // --- DARK MODE LOGIC ---
         let currentTheme = localStorage.getItem('parkkarma_theme') || 'light';
         let mapLayerLight = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
         let mapLayerDark = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
@@ -239,9 +252,9 @@
                 document.body.classList.remove('dark-mode');
                 baseLayer.setUrl(mapLayerLight);
             }
+            toggleMenu(); // Κλείνει το μενού μετά την επιλογή
         }
 
-        // --- GAMIFICATION BADGES ---
         function getBadge(karma) {
             if(karma >= 500) return "💎 Θρύλος";
             if(karma >= 150) return "🥇 Τοπικός Ήρωας";
@@ -249,7 +262,6 @@
             return "🥉 Αρχάριος";
         }
 
-        // --- POPUP LOGIC ---
         let isPopupOpen = false;
         let popupJustClosed = false;
 
@@ -260,12 +272,11 @@
             setTimeout(() => { popupJustClosed = false; }, 200);
         });
 
-        // --- RADAR LOGIC ---
         let notifiedSpots = new Set();
         function playRadarBeep() {
             try {
                 let audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-                audio.play().catch(e => console.log("Audio blocked by browser auto-play policy"));
+                audio.play().catch(e => console.log("Audio muted"));
             } catch(e){}
         }
         function showRadarToast(distance) {
@@ -275,7 +286,6 @@
             setTimeout(() => { toast.style.display = 'none'; }, 5000);
         }
 
-        // --- FIND MY CAR LOGIC ---
         function setMyCar() {
             if (!userMarker) return;
             let pos = userMarker.getLatLng();
@@ -307,10 +317,10 @@
                 map.setView([pos.lat, pos.lng], 18);
                 if(myCarMarker) myCarMarker.openPopup();
             } else {
-                alert("Δεν έχεις αποθηκεύσει τη θέση του αυτοκινήτου σου! Πάτα 'Επαναφορά μου' και επέλεξε 'Πάρκαρα Εδώ!' για να την σώσεις.");
+                alert("Δεν έχεις αποθηκεύσει τη θέση! Πάτα 'Επαναφορά μου' και 'Πάρκαρα Εδώ!' για να την σώσεις.");
             }
         }
-        renderMyCarMarker(); // Φόρτωση κατά το άνοιγμα
+        renderMyCarMarker();
 
         async function getAddress(lat, lng) {
             try {
@@ -325,9 +335,7 @@
                     return result || "Άγνωστη διεύθυνση";
                 }
                 return "Διεύθυνση μη διαθέσιμη";
-            } catch (e) {
-                return "Σφάλμα διεύθυνσης";
-            }
+            } catch (e) { return "Σφάλμα διεύθυνσης"; }
         }
 
         async function handleCredentialResponse(response) {
@@ -409,7 +417,7 @@
         }
 
         L.Control.geocoder({
-            position: 'topleft', defaultMarkGeocode: false, placeholder: 'Αναζήτηση διεύθυνσης...', errorMessage: 'Δεν βρέθηκε.'
+            position: 'topleft', defaultMarkGeocode: false, placeholder: 'Αναζήτηση...', errorMessage: 'Δεν βρέθηκε.'
         }).on('markgeocode', function(e) {
             var bbox = e.geocode.bbox; map.fitBounds(bbox);
             if (searchMarker) map.removeLayer(searchMarker);
@@ -619,7 +627,7 @@
                     // RADAR CHECK
                     if (color === 'green' && !isBooked && !notifiedSpots.has(spot.id) && userMarker) {
                         let distance = Math.round(userMarker.getLatLng().distanceTo(L.latLng(spot.latitude, spot.longitude)));
-                        if (distance < 1000) { // κάτω από 1 χλμ
+                        if (distance < 1000) { 
                             playRadarBeep();
                             showRadarToast(distance);
                             notifiedSpots.add(spot.id);
