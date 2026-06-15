@@ -1,13 +1,12 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean
 from sqlalchemy.sql import func
 from database import Base
 
 class DBAppUser(Base):
     __tablename__ = "app_users"
-    device_id = Column(String, primary_key=True, index=True) # Το Email
+    device_id = Column(String, primary_key=True, index=True)
     karma = Column(Integer, default=0)
 
-# ΝΕΟΣ ΠΙΝΑΚΑΣ: Κρατάει έως 10 αποθηκευμένες θέσεις ανά χρήστη
 class DBSavedLocation(Base):
     __tablename__ = "saved_locations"
     id = Column(Integer, primary_key=True, index=True)
@@ -24,3 +23,8 @@ class DBParkingSpotV2(Base):
     minutes_until_free = Column(Integer)
     photo = Column(String, nullable=True) 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # ΝΕΑ ΠΕΔΙΑ ΓΙΑ ΤΟ "ΕΡΧΟΜΑΙ!" (ΚΡΑΤΗΣΗ)
+    is_booked = Column(Boolean, default=False)
+    booked_by = Column(String, nullable=True)
+    booked_at = Column(DateTime(timezone=True), nullable=True)
