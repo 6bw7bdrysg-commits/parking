@@ -186,12 +186,21 @@
             localStorage.setItem('parkkarma_anon_id', anonDeviceID);
         }
 
-        // ΝΕΟ: Μηχανισμός ελέγχου κλεισίματος popup για το δεύτερο κλικ
+        // --- ΝΕΟΣ, ΣΩΣΤΟΣ ΜΗΧΑΝΙΣΜΟΣ ΠΑΡΑΚΟΛΟΥΘΗΣΗΣ POPUP ---
+        let isPopupOpen = false;
         let popupJustClosed = false;
+
+        map.on('popupopen', function() {
+            isPopupOpen = true;
+        });
+
         map.on('popupclose', function() {
+            isPopupOpen = false;
             popupJustClosed = true;
+            // Κρατάμε τη μνήμη ότι μόλις έκλεισε για 200 χιλιοστά του δευτερολέπτου
             setTimeout(() => { popupJustClosed = false; }, 200);
         });
+        // -----------------------------------------------------
 
         async function getAddress(lat, lng) {
             try {
@@ -460,20 +469,21 @@
             }
         }
 
-        // Ο ΜΗΧΑΝΙΣΜΟΣ ΠΟΥ ΔΙΟΡΘΩΝΕΙ ΤΟ ΠΡΟΒΛΗΜΑ ΜΕ ΤΟ ΔΕΥΤΕΡΟ ΚΛΙΚ
+        // --- ΕΔΩ ΕΙΝΑΙ Η ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΟ ΣΩΣΤΟ ΚΛΙΚ ---
         map.on('click', async function(e) {
             let menuOverlay = document.getElementById('menu-overlay');
             let isMenuOpen = menuOverlay && menuOverlay.style.display === 'block';
 
-            // Ελέγχουμε αν υπάρχει ήδη ανοιχτό popup, Η αν ένα popup μόλις έκλεισε από αυτό ακριβώς το κλικ
-            if (isMenuOpen || !!map._popup || popupJustClosed || lastClickedMarker || searchMarker) {
+            // Ελέγχουμε αν υπάρχει ανοιχτό μενού Ή ανοιχτό popup Ή αν κάποιο popup μόλις έκλεισε 
+            // Ή αν υπάρχουν ήδη στον χάρτη πινέζες αναζήτησης/νέας θέσης.
+            if (isMenuOpen || isPopupOpen || popupJustClosed || lastClickedMarker || searchMarker) {
                 if (isMenuOpen) menuOverlay.style.display = 'none';
                 if (lastClickedMarker) { map.removeLayer(lastClickedMarker); lastClickedMarker = null; }
                 if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
-                map.closePopup(); 
-                return; // Σταματάει εδώ την εκτέλεση! Το δεύτερο (καθαρό) κλικ θα περάσει κανονικά από κάτω.
+                return; // Σταματάμε εδώ. Δεν προσθέτουμε νέα πινέζα!
             }
 
+            // Αν φτάσαμε εδώ, ο χάρτης είναι 100% καθαρός, άρα ανοίγουμε τη νέα πινέζα
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
             let popupId = "new_spot_addr";
             let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width: 180px;">
@@ -493,8 +503,14 @@
             </div>`;
             
             lastClickedMarker.bindPopup(popupContent).openPopup();
-            lastClickedMarker.bringToFront();
-            L.DomEvent.disableClickPropagation(lastClickedMarker._popup._container);
+            
+            // Βάζουμε την πινέζα να φαίνεται από πάνω από τις άλλες
+            lastClickedMarker.setZIndexOffset(1000); 
+
+            let popup = lastClickedMarker.getPopup();
+            if (popup && popup._container) {
+                L.DomEvent.disableClickPropagation(popup._container);
+            }
             
             let addr = await getAddress(e.latlng.lat, e.latlng.lng);
             let addrEl = document.getElementById(popupId);
