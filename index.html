@@ -75,8 +75,9 @@
         .close-modal { background-color: #007bff; color: white; }
         .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
         
-        /* Μικρό στυλ για τη διεύθυνση */
         .address-text { color: #555; font-size: 13px; margin: 5px 0; font-weight: normal; }
+        .spot-tag { background: #e9ecef; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 13px; display: inline-block; margin-bottom: 5px; border: 1px solid #ccc; font-weight: bold; }
+        .tag-select { width: 100%; padding: 8px; margin: 5px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -160,7 +161,6 @@
             localStorage.setItem('parkkarma_anon_id', anonDeviceID);
         }
 
-        // Συνάρτηση για δυναμική εύρεση Διεύθυνσης (Reverse Geocoding)
         async function getAddress(lat, lng) {
             try {
                 let res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
@@ -170,7 +170,7 @@
                     let number = data.address.house_number || "";
                     let city = data.address.city || data.address.town || data.address.village || "";
                     let result = `${street} ${number}, ${city}`.trim();
-                    result = result.replace(/^,\s*/, '').replace(/,\s*$/, ''); // Καθαρισμός κόμματων
+                    result = result.replace(/^,\s*/, '').replace(/,\s*$/, '');
                     return result || "Άγνωστη διεύθυνση";
                 }
                 return "Διεύθυνση μη διαθέσιμη";
@@ -238,26 +238,22 @@
         function openModal(id) { document.getElementById(id).style.display = 'block'; toggleMenu(); }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // Χάρτης: OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
             attribution: '© OpenStreetMap contributors', 
             maxZoom: 19 
         }).addTo(map);
 
-        // Προσθήκη Μπάρας Αναζήτησης Διεύθυνσης (Geocoder)
         L.Control.geocoder({
             position: 'topleft',
-            defaultMarkGeocode: false, // Το διαχειριζόμαστε εμείς από κάτω
+            defaultMarkGeocode: false,
             placeholder: 'Αναζήτηση διεύθυνσης...',
             errorMessage: 'Η διεύθυνση δεν βρέθηκε.'
         }).on('markgeocode', function(e) {
             var bbox = e.geocode.bbox;
-            map.fitBounds(bbox); // Ζουμάρει στη διεύθυνση
+            map.fitBounds(bbox);
             
-            // Καθαρίζει παλιά πινέζα αναζήτησης
             if (searchMarker) map.removeLayer(searchMarker);
             
-            // Προσθέτει νέα πινέζα στο αποτέλεσμα
             searchMarker = L.marker(e.geocode.center).addTo(map)
                 .bindPopup(`<div style="text-align:center; padding:5px;"><b>Αποτέλεσμα Αναζήτησης:</b><br><span class="address-text">📍 ${e.geocode.name}</span></div>`)
                 .openPopup();
@@ -271,9 +267,18 @@
             
             savedPositions.forEach((spot, index) => {
                 let popupId = `saved_addr_${index}`;
+                let tagSelectId = `savedTagInput_${index}`;
+                
                 let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
                     <b>Αποθηκευμένη θέση #${index+1}</b><br>
                     <div class="address-text" id="${popupId}">📍 Φόρτωση διεύθυνσης...</div>
+                    <select id="${tagSelectId}" class="tag-select">
+                        <option value="">-- Χωρίς Ετικέτα --</option>
+                        <option value="🚙 Χωράει μεγάλο όχημα">🚙 Χωράει μεγάλο όχημα</option>
+                        <option value="♿ Θέση ΑμεΑ / Ράμπα">♿ Θέση ΑμεΑ / Ράμπα</option>
+                        <option value="🌳 Κάτω από δέντρο/Σκιά">🌳 Κάτω από δέντρο/Σκιά</option>
+                        <option value="⚡ Κοντά σε φορτιστή EV">⚡ Κοντά σε φορτιστή EV</option>
+                    </select>
                     <input type="file" id="savedPhotoInput_${index}" accept="image/*" style="width:100%; margin:5px 0;">
                     <button class="btn-action" onclick="submitSavedWithPhoto(${index}, ${spot.lat}, ${spot.lng})">📢 Δημοσίευσε</button>
                     <button class="occupy-btn" onclick="deleteSavedMarker(${spot.id}, ${index})">🗑️ Διαγραφή</button>
@@ -281,7 +286,6 @@
                 
                 let marker = L.marker([spot.lat, spot.lng], { icon: L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] }) }).addTo(map).bindPopup(popupContent);
                 
-                // Φορτώνει τη διεύθυνση μόνο όταν ο χρήστης πατήσει την πινέζα
                 marker.on('click', async () => {
                     let el = document.getElementById(popupId);
                     if(el && el.innerText.includes('Φόρτωση')) {
@@ -296,13 +300,14 @@
 
         function submitSavedWithPhoto(index, lat, lng) {
             const file = document.getElementById(`savedPhotoInput_${index}`).files[0];
+            const tagValue = document.getElementById(`savedTagInput_${index}`).value;
             let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
             if (mins) {
                 if (file) {
                     const reader = new FileReader();
-                    reader.onloadend = () => { sendToServer(lat, lng, mins, reader.result); };
+                    reader.onloadend = () => { sendToServer(lat, lng, mins, reader.result, tagValue); };
                     reader.readAsDataURL(file);
-                } else { sendToServer(lat, lng, mins, null); }
+                } else { sendToServer(lat, lng, mins, null, tagValue); }
             }
         }
 
@@ -328,6 +333,13 @@
                     userMarker.bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
                         <b>Είσαι εδώ!</b><br>
                         <div class="address-text" id="${popupId}">📍 Φόρτωση διεύθυνσης...</div>
+                        <select id="userTagInput" class="tag-select">
+                            <option value="">-- Χωρίς Ετικέτα --</option>
+                            <option value="🚙 Χωράει μεγάλο όχημα">🚙 Χωράει μεγάλο όχημα</option>
+                            <option value="♿ Θέση ΑμεΑ / Ράμπα">♿ Θέση ΑμεΑ / Ράμπα</option>
+                            <option value="🌳 Κάτω από δέντρο/Σκιά">🌳 Κάτω από δέντρο/Σκιά</option>
+                            <option value="⚡ Κοντά σε φορτιστή EV">⚡ Κοντά σε φορτιστή EV</option>
+                        </select>
                         <button class="save-btn" onclick="saveCurrentLocation()">💾 Αποθήκευση</button>
                         <input type="file" id="photoInput" accept="image/*" style="width:100%; margin:5px 0;">
                         <button class="btn-action" onclick="submitPosition(true)">📢 Δημοσίευσε</button>
@@ -376,15 +388,17 @@
         }
 
         function submitPosition(isUserMarker) {
-            let pos, fileInput;
+            let pos, fileInput, tagValue;
             if (isUserMarker) { 
                 pos = userMarker.getLatLng(); 
                 fileInput = document.getElementById('photoInput'); 
-                processSubmission(pos, fileInput, isUserMarker);
+                tagValue = document.getElementById('userTagInput') ? document.getElementById('userTagInput').value : "";
+                processSubmission(pos, fileInput, isUserMarker, tagValue);
             } else { 
                 if (!lastClickedMarker) return; 
                 pos = lastClickedMarker.getLatLng(); 
                 fileInput = document.getElementById('clickPhotoInput'); 
+                tagValue = document.getElementById('clickTagInput') ? document.getElementById('clickTagInput').value : "";
                 
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition((currentPos) => {
@@ -396,21 +410,21 @@
                             alert("Μπορείς να δημοσιεύσεις μια θέση μόνο αν βρίσκεσαι κοντά της (έως 60 μέτρα)!");
                             return;
                         }
-                        processSubmission(pos, fileInput, isUserMarker);
+                        processSubmission(pos, fileInput, isUserMarker, tagValue);
                     }, (err) => { alert("Πρέπει να δώσεις άδεια τοποθεσίας (GPS) για να δημοσιεύσεις."); }, { enableHighAccuracy: true });
                 } else { alert("Το κινητό σου δεν υποστηρίζει GPS."); }
             }
         }
 
-        function processSubmission(pos, fileInput, isUserMarker) {
+        function processSubmission(pos, fileInput, isUserMarker, tagValue) {
             const file = fileInput.files[0];
             let mins = prompt("Πόσα λεπτά θα είσαι ελεύθερος;", "10");
             if (mins) {
                 if (file) {
                     const reader = new FileReader();
-                    reader.onloadend = () => { sendToServer(pos.lat, pos.lng, mins, reader.result); if (!isUserMarker) cancelClickedMarker(); };
+                    reader.onloadend = () => { sendToServer(pos.lat, pos.lng, mins, reader.result, tagValue); if (!isUserMarker) cancelClickedMarker(); };
                     reader.readAsDataURL(file);
-                } else { sendToServer(pos.lat, pos.lng, mins, null); if (!isUserMarker) cancelClickedMarker(); }
+                } else { sendToServer(pos.lat, pos.lng, mins, null, tagValue); if (!isUserMarker) cancelClickedMarker(); }
             }
         }
 
@@ -434,6 +448,13 @@
             let popupContent = `<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width: 180px;">
                 <b>Νέα θέση</b><br>
                 <div class="address-text" id="${popupId}">📍 Φόρτωση διεύθυνσης...</div>
+                <select id="clickTagInput" class="tag-select">
+                    <option value="">-- Χωρίς Ετικέτα --</option>
+                    <option value="🚙 Χωράει μεγάλο όχημα">🚙 Χωράει μεγάλο όχημα</option>
+                    <option value="♿ Θέση ΑμεΑ / Ράμπα">♿ Θέση ΑμεΑ / Ράμπα</option>
+                    <option value="🌳 Κάτω από δέντρο/Σκιά">🌳 Κάτω από δέντρο/Σκιά</option>
+                    <option value="⚡ Κοντά σε φορτιστή EV">⚡ Κοντά σε φορτιστή EV</option>
+                </select>
                 <button class="save-btn" style="margin-top:5px; width:100%;" onclick="saveClickedLocation()">💾 Αποθήκευση</button><br>
                 <input type="file" id="clickPhotoInput" accept="image/*" style="width:100%; margin:8px 0;"><br>
                 <button class="btn-action" style="margin-top:5px; width:100%;" onclick="submitPosition(false)">📢 Δημοσίευσε</button>
@@ -497,11 +518,18 @@
             } else { alert("Το κινητό σου δεν υποστηρίζει GPS."); }
         }
 
-        async function sendToServer(lat, lng, mins, photo) {
+        async function sendToServer(lat, lng, mins, photo, tagValue) {
             await fetch(`${API_BASE_URL}/free-spot`, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({user_email: userEmail, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo}) 
+                body: JSON.stringify({
+                    user_email: userEmail, 
+                    latitude: lat, 
+                    longitude: lng, 
+                    minutes_until_free: parseInt(mins), 
+                    photo: photo,
+                    tag: tagValue || null
+                }) 
             });
             alert(userEmail ? "Η θέση δημοσιεύτηκε! Θα κερδίσεις Karma μόλις την καταλάβει κάποιος άλλος οδηγός." : "Η θέση δημοσιεύτηκε ανώνυμα!");
             map.closePopup(); loadSpots();
@@ -553,6 +581,8 @@
                     let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     
+                    let tagHtml = spot.tag ? `<div class="spot-tag">${spot.tag}</div><br>` : "";
+                    
                     let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/...${spot.latitude},${spot.longitude}')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
@@ -571,11 +601,11 @@
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
                         .bindPopup(`<div style="text-align:center; background:white; padding:10px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); width:180px;">
                             ${photoHtml}
+                            ${tagHtml}
                             <div class="address-text" id="${popupId}">📍 Φόρτωση διεύθυνσης...</div>
                             <b>Λήγει σε: ${remaining} λεπτά</b><br>${buttonsHtml}
                         </div>`);
                         
-                    // Φορτώνει τη διεύθυνση μόνο όταν ο χρήστης πατήσει την πινέζα
                     marker.on('click', async () => {
                         let el = document.getElementById(popupId);
                         if(el && el.innerText.includes('Φόρτωση')) {
