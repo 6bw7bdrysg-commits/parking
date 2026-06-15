@@ -107,7 +107,7 @@
         <p><b>1. Βρίσκεις πάρκινγκ σε δευτερόλεπτα</b><br>Μην γυρνάς άσκοπα! Κοίτα τον χάρτη:<br>
         • <b>Πράσινο 🟢:</b> Μια θέση μόλις άδειασε – πρόλαβε την!<br>
         • <b>Κόκκινο 🔴:</b> Η θέση είναι στα "τελευταία της" – αν είσαι κοντά, είναι δική σου.<br>
-        • <b>Μπλε 🔵:</b> Κάποιος έχει πατήσει "Έρχομαι!" - Καλύτερα ψάξε αλλού.<br>
+        • <b>Μοβ 🟣:</b> Κάποιος έχει πατήσει "Έρχομαι!" - Καλύτερα ψάξε αλλού.<br>
         Πάτα πάνω στη θέση και διάλεξε "Οδηγίες" για να σε πάει το GPS απευθείας εκεί.</p>
         <p><b>2. Γίνεσαι μέλος μιας μεγάλης παρέας</b><br>Όταν φεύγεις από μια θέση, μην την αφήνεις να πάει χαμένη!<br>
         • Πάτα "Δημοσίευσε" και ενημέρωσε τους υπόλοιπους ότι αδειάζεις. <b>(Κερδίζεις +10 Karma!)</b><br>
@@ -211,7 +211,12 @@
         function openModal(id) { document.getElementById(id).style.display = 'block'; toggleMenu(); }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri', maxZoom: 19 }).addTo(map);
+        // Αλλαγή Χάρτη: OpenStreetMap αντί για Esri (Δορυφορικό)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+            attribution: '© OpenStreetMap contributors', 
+            maxZoom: 19 
+        }).addTo(map);
+
         window.addEventListener('resize', () => map.invalidateSize());
 
         function showAllSavedMarkers() {
@@ -412,12 +417,11 @@
             map.closePopup(); loadSpots();
         }
 
-        // ΝΕΟ: Λειτουργίες Κράτησης (Έρχομαι)
         async function bookSpot(spotId) {
             let ident = userEmail ? userEmail : anonDeviceID;
             let res = await fetch(`${API_BASE_URL}/book-spot/${spotId}?occupier_id=${ident}`, { method: 'POST' });
             if (res.ok) {
-                alert("🚙 Η θέση κρατήθηκε για 5 λεπτά! Οι άλλοι οδηγοί βλέπουν τώρα μια Μπλε Πινέζα.");
+                alert("🚙 Η θέση κρατήθηκε για 5 λεπτά! Οι άλλοι οδηγοί βλέπουν τώρα μια Μοβ Πινέζα.");
                 map.closePopup();
                 loadSpots();
             } else {
@@ -454,11 +458,12 @@
                     let bookedByMe = isBooked && spot.booked_by === ident;
                     
                     let color = remaining <= 3 ? 'red' : 'green';
-                    if (isBooked) color = 'blue'; // Η πινέζα γίνεται μπλε αν είναι κρατημένη!
+                    if (isBooked) color = 'violet'; // Χρώμα Μοβ!
                     
                     let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     
+                    // Επίσημο URL Google Maps Navigation
                     let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
@@ -466,7 +471,7 @@
                             buttonsHtml += `<button class="save-btn" onclick="unbookSpot(${spot.id})">✖️ Ακύρωση 'Έρχομαι'</button>`;
                             buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Έφτασα! (Κατάληψη)</button>`;
                         } else {
-                            buttonsHtml += `<p style="color:blue; font-weight:bold; margin-top:10px; border: 2px solid blue; padding: 5px; border-radius: 5px;">🔵 Οδηγός καθ' οδόν!</p>`;
+                            buttonsHtml += `<p style="color:purple; font-weight:bold; margin-top:10px; border: 2px solid purple; padding: 5px; border-radius: 5px;">🟣 Οδηγός καθ' οδόν!</p>`;
                         }
                     } else {
                         buttonsHtml += `<button class="btn-action" style="background-color: #17a2b8;" onclick="bookSpot(${spot.id})">🙋‍♂️ Έρχομαι!</button>`;
