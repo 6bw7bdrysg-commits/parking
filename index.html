@@ -174,7 +174,6 @@
             <li id="logout-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; color: red; font-weight: bold;" onclick="handleLogout()">🚪 Αποσύνδεση</li>
             <li onclick="toggleTheme()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold;">🌞/🌙 Σκοτεινό Θέμα</li>
             <li onclick="openLeaderboard()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold;">🏆 Top Οδηγοί (Leaderboard)</li>
-            <li id="admin-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; color: #e0a800; font-weight: bold;" onclick="openAdminPanel()">👑 Διαχείριση (Admin)</li>
             <li onclick="openModal('instructions-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">ℹ️ Οδηγίες Χρήσης</li>
             <li onclick="openModal('about-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">👥 Σχετικά με εμάς</li>
             <li onclick="openModal('terms-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">📜 Όροι Χρήσης</li>
@@ -191,119 +190,84 @@
     </div>
 
     <div id="instructions-modal" class="modal">
-        <div class="modal-content">
-            <h2 style="color:#007bff;">🚗 Οδηγίες Χρήσης</h2>
-            <p>Καλώς ήρθες στην παρέα μας! Εδώ, το παρκάρισμα στην πόλη γίνεται ομαδικό άθλημα. Δες πώς λειτουργεί:</p>
+        <h2 style="color:#007bff;">🚗 Οδηγίες Χρήσης</h2>
+        <p>Καλώς ήρθες στην παρέα μας! Εδώ, το παρκάρισμα στην πόλη γίνεται ομαδικό άθλημα. Δες πώς λειτουργεί:</p>
 
-            <h3 style="margin-bottom: 5px;">1. Βρες την ιδανική θέση 🗺️</h3>
-            <p style="margin-top: 0; font-size: 14px;">
-            • <b>🟢 Πράσινο:</b> Η θέση είναι ελεύθερη – πρόλαβέ την!<br>
-            • <b>🔴 Κόκκινο:</b> Ο οδηγός φεύγει σε λιγότερο από 3 λεπτά.<br>
-            • <b>🟣 Μοβ:</b> Κάποιος έχει πατήσει "Έρχομαι!". Ψάξε για άλλη!<br>
-            • <b>📍 GPS:</b> Πάτα "Οδηγίες" για πλοήγηση.
-            </p>
+        <h3 style="margin-bottom: 5px;">1. Βρες την ιδανική θέση 🗺️</h3>
+        <p style="margin-top: 0; font-size: 14px;">
+        • <b>🟢 Πράσινο:</b> Η θέση είναι ελεύθερη – πρόλαβέ την!<br>
+        • <b>🔴 Κόκκινο:</b> Ο οδηγός φεύγει σε λιγότερο από 3 λεπτά.<br>
+        • <b>🟣 Μοβ:</b> Κάποιος έχει πατήσει "Έρχομαι!". Ψάξε για άλλη!<br>
+        • <b>📍 GPS:</b> Πάτα "Οδηγίες" για πλοήγηση.
+        </p>
 
-            <h3 style="margin-bottom: 5px;">2. Κάνε κράτηση (Έρχομαι!) 🙋‍♂️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" για σένα για 5 λεπτά, ώστε οι άλλοι να μην κατευθυνθούν εκεί.</p>
+        <h3 style="margin-bottom: 5px;">2. Κάνε κράτηση (Έρχομαι!) 🙋‍♂️</h3>
+        <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" για σένα για 5 λεπτά, ώστε οι άλλοι να μην κατευθυνθούν εκεί.</p>
 
-            <h3 style="margin-bottom: 5px;">3. Radar Θέσεων 📡</h3>
-            <p style="margin-top: 0; font-size: 14px;">Αν αδειάσει θέση σε ακτίνα 1χλμ, ακούς "Μπιπ!" (Θυμήσου να πατήσεις μια φορά τον χάρτη όταν μπαίνεις για να επιτρέψεις τον ήχο).</p>
+        <h3 style="margin-bottom: 5px;">3. Radar Θέσεων 📡</h3>
+        <p style="margin-top: 0; font-size: 14px;">Αν αδειάσει θέση σε ακτίνα 1χλμ, ακούς "Μπιπ!" (Θυμήσου να πατήσεις μια φορά τον χάρτη όταν μπαίνεις για να επιτρέψεις τον ήχο).</p>
 
-            <h3 style="margin-bottom: 5px;">4. Γίνε "Θρύλος" 🏆</h3>
-            <p style="margin-top: 0; font-size: 14px;">Όταν φεύγεις, πάτα "Δημοσίευσε". Κερδίζεις +10 Karma, βάζεις ετικέτες (π.χ. 🌳 Σκιά) και ανεβαίνεις στο Leaderboard!</p>
+        <h3 style="margin-bottom: 5px;">4. Γίνε "Θρύλος" 🏆</h3>
+        <p style="margin-top: 0; font-size: 14px;">Όταν φεύγεις, πάτα "Δημοσίευσε". Κερδίζεις +10 Karma, βάζεις ετικέτες (π.χ. 🌳 Σκιά) και ανεβαίνεις στο Leaderboard!</p>
 
-            <h3 style="margin-bottom: 5px;">5. Smart Planning (Χρυσή Πινέζα) 🟡</h3>
-            <p style="margin-top: 0; font-size: 14px;">Πάτα "Αποθήκευση" μόλις παρκάρεις. Λίγα λεπτά πριν φύγεις, πάτα τη χρυσή πινέζα και "Δημοσίευσε" για να προειδοποιήσεις τους άλλους.</p>
+        <h3 style="margin-bottom: 5px;">5. Smart Planning (Χρυσή Πινέζα) 🟡</h3>
+        <p style="margin-top: 0; font-size: 14px;">Πάτα "Αποθήκευση" μόλις παρκάρεις. Λίγα λεπτά πριν φύγεις, πάτα τη χρυσή πινέζα και "Δημοσίευσε" για να προειδοποιήσεις τους άλλους.</p>
 
-            <h3 style="margin-bottom: 5px;">6. "Πού πάρκαρα;" (Το αμάξι μου) 🚗</h3>
-            <p style="margin-top: 0; font-size: 14px;">
-            Ξέχασες πού άφησες το αμάξι; <br>
-            1️⃣ Πάτα <b>"📍 Επαναφορά μου"</b> και μετά <b>"🚗 Πάρκαρα Εδώ!"</b> για να βάλεις τη μόνιμη Μαύρη Πινέζα.<br>
-            2️⃣ Όταν θες να γυρίσεις, πάτα <b>"🅿️ Το αμάξι μου"</b> (πάνω δεξιά) για να δεις οδηγίες πλοήγησης με τα πόδια!
-            </p>
+        <h3 style="margin-bottom: 5px;">6. "Πού πάρκαρα;" (Το αμάξι μου) 🚗</h3>
+        <p style="margin-top: 0; font-size: 14px;">
+        Ξέχασες πού άφησες το αμάξι; <br>
+        1️⃣ Πάτα <b>"📍 Επαναφορά μου"</b> και μετά <b>"🚗 Πάρκαρα Εδώ!"</b> για να βάλεις τη μόνιμη Μαύρη Πινέζα.<br>
+        2️⃣ Όταν θες να γυρίσεις, πάτα <b>"🅿️ Το αμάξι μου"</b> (πάνω δεξιά) για να δεις οδηγίες πλοήγησης με τα πόδια!
+        </p>
 
-            <h3 style="margin-bottom: 5px;">7. Dark Mode & Φίλτρα 🌙</h3>
-            <p style="margin-top: 0; font-size: 14px;">Οδηγείς βράδυ; Άνοιξε το Σκοτεινό Θέμα από το μενού. Ψάχνεις πάρκινγκ για ΑμεΑ ή μεγάλο όχημα; Βάλε φίλτρα!</p>
+        <h3 style="margin-bottom: 5px;">7. Dark Mode & Φίλτρα 🌙</h3>
+        <p style="margin-top: 0; font-size: 14px;">Οδηγείς βράδυ; Άνοιξε το Σκοτεινό Θέμα από το μενού. Ψάχνεις πάρκινγκ για ΑμεΑ ή μεγάλο όχημα; Βάλε φίλτρα!</p>
 
-            <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin-top: 15px; color: #333;">
-                <b>Με λίγα λόγια:</b> Είδες ελεύθερο; Πήγαινε. Φεύγεις; Ενημέρωσε. Βοηθάς την πόλη σου!
-            </div>
-
-            <button class="close-modal" style="margin-top: 15px;" onclick="closeModal('instructions-modal')">Κλείσιμο</button>
+        <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin-top: 15px; color: #333;">
+            <b>Με λίγα λόγια:</b> Είδες ελεύθερο; Πήγαινε. Φεύγεις; Ενημέρωσε. Βοηθάς την πόλη σου!
         </div>
+
+        <button class="close-modal" style="margin-top: 15px;" onclick="closeModal('instructions-modal')">Κλείσιμο</button>
     </div>
 
     <div id="about-modal" class="modal">
-        <div class="modal-content">
-            <h2 style="color:#007bff;">👥 Σχετικά με εμάς</h2>
-            
-            <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις ατέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
-            
-            <p>Σκεφτήκαμε το εξής απλό: Γιατί να ψάχνουμε στα τυφλά, όταν μπορούμε να γίνουμε όλοι μαζί ένας «ζωντανός χάρτης»; Όταν φεύγει ένας, μπορεί να έρθει απευθείας ο επόμενος. Χωρίς άγχος, χωρίς χαμένη βενζίνη.</p>
-            
-            <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin: 15px 0; color: #333;">
-                <p style="margin: 0;">Σκοπός μας δεν είναι απλώς να φτιάξουμε άλλη μια εφαρμογή, αλλά μια <b>κοινότητα αλληλεγγύης</b>. Να μοιραζόμαστε τον χώρο και να κάνουμε την πόλη μας πιο φιλική και την καθημερινότητά μας πιο εύκολη.</p>
-            </div>
-
-            <h3 style="color:#333; margin-bottom: 5px;">🚀 Το Μέλλον</h3>
-            <p style="margin-top: 0; font-size: 14px;">Αυτό είναι μόνο η αρχή! Το όραμά μας είναι το ParkKarma να εξελιχθεί στον απόλυτο συνοδηγό σου. Σύντομα θα προσθέσουμε τρόπους επικοινωνίας (Social Media & Email) για να ακούμε τις ιδέες σου, τις προτάσεις ή ακόμα και τα προβλήματα που συναντάς.</p>
-            
-            <p style="text-align: center; font-weight: bold; color: #28a745; font-size: 16px; margin-top: 20px;">
-                Σε ευχαριστούμε που δίνεις και παίρνεις το καλό... Karma! 🚙✨
-            </p>
-
-            <button class="close-modal" style="margin-top: 15px;" onclick="closeModal('about-modal')">Κλείσιμο</button>
+        <h2 style="color:#007bff;">👥 Σχετικά με εμάς</h2>
+        <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις ατέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
+        <p>Σκεφτήκαμε το εξής απλό: Γιατί να ψάχνουμε στα τυφλά, όταν μπορούμε να γίνουμε όλοι μαζί ένας «ζωντανός χάρτης»; Όταν φεύγει ένας, μπορεί να έρθει απευθείας ο επόμενος. Χωρίς άγχος, χωρίς χαμένη βενζίνη.</p>
+        <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin: 15px 0; color: #333;">
+            <p style="margin: 0;">Σκοπός μας δεν είναι απλώς να φτιάξουμε άλλη μια εφαρμογή, αλλά μια <b>κοινότητα αλληλεγγύης</b>. Να μοιραζόμαστε τον χώρο και να κάνουμε την πόλη μας πιο φιλική και την καθημερινότητά μας πιο εύκολη.</p>
         </div>
+        <h3 style="color:#333; margin-bottom: 5px;">🚀 Το Μέλλον</h3>
+        <p style="margin-top: 0; font-size: 14px;">Αυτό είναι μόνο η αρχή! Το όραμά μας είναι το ParkKarma να εξελιχθεί στον απόλυτο συνοδηγό σου. Σύντομα θα προσθέσουμε τρόπους επικοινωνίας (Social Media & Email) για να ακούμε τις ιδέες σου, τις προτάσεις ή ακόμα και τα προβλήματα που συναντάς.</p>
+        <p style="text-align: center; font-weight: bold; color: #28a745; font-size: 16px; margin-top: 20px;">
+            Σε ευχαριστούμε που δίνεις και παίρνεις το καλό... Karma! 🚙✨
+        </p>
+        <button class="close-modal" style="margin-top: 15px;" onclick="closeModal('about-modal')">Κλείσιμο</button>
     </div>
 
     <div id="terms-modal" class="modal">
-        <div class="modal-content">
-            <h2 style="color:#007bff;">📜 Όροι Χρήσης & Αποποίηση Ευθύνης</h2>
-            
-            <p style="font-size: 14px; color: #555;">Παρακαλούμε διαβάστε προσεκτικά τους παρακάτω όρους πριν χρησιμοποιήσετε το ParkKarma.</p>
+        <h2 style="color:#007bff;">📜 Όροι Χρήσης & Αποποίηση Ευθύνης</h2>
+        <p style="font-size: 14px; color: #555;">Παρακαλούμε διαβάστε προσεκτικά τους παρακάτω όρους πριν χρησιμοποιήσετε το ParkKarma.</p>
 
-            <h3 style="margin-bottom: 5px; font-size: 16px;">1. Ασφαλής Οδήγηση (Σημαντικό!) ⚠️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Η προσοχή σας πρέπει να βρίσκεται πάντα στον δρόμο. Μην χειρίζεστε την εφαρμογή ενώ οδηγείτε. Χρησιμοποιήστε το ηχητικό Radar ή ζητήστε από τον συνοδηγό να ελέγχει τον χάρτη.</p>
+        <h3 style="margin-bottom: 5px; font-size: 16px;">1. Ασφαλής Οδήγηση (Σημαντικό!) ⚠️</h3>
+        <p style="margin-top: 0; font-size: 14px;">Η προσοχή σας πρέπει να βρίσκεται πάντα στον δρόμο. Μην χειρίζεστε την εφαρμογή ενώ οδηγείτε. Χρησιμοποιήστε το ηχητικό Radar ή ζητήστε από τον συνοδηγό να ελέγχει τον χάρτη.</p>
 
-            <h3 style="margin-bottom: 5px; font-size: 16px;">2. Ενημερωτικός Χαρακτήρας ℹ️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Το <b>ParkKarma</b> βασίζεται αποκλειστικά στην κοινότητα (crowdsourcing). Η εφαρμογή <b>δεν εγγυάται</b> τη διαθεσιμότητα καμίας θέσης στάθμευσης, καθώς μια θέση μπορεί να καταληφθεί από άλλο όχημα πριν φτάσετε.</p>
+        <h3 style="margin-bottom: 5px; font-size: 16px;">2. Ενημερωτικός Χαρακτήρας ℹ️</h3>
+        <p style="margin-top: 0; font-size: 14px;">Το <b>ParkKarma</b> βασίζεται αποκλειστικά στην κοινότητα (crowdsourcing). Η εφαρμογή <b>δεν εγγυάται</b> τη διαθεσιμότητα καμίας θέσης στάθμευσης, καθώς μια θέση μπορεί να καταληφθεί από άλλο όχημα πριν φτάσετε.</p>
 
-            <h3 style="margin-bottom: 5px; font-size: 16px;">3. Αποποίηση Ευθύνης 🚫</h3>
-            <p style="margin-top: 0; font-size: 14px;">Οι δημιουργοί της εφαρμογής δεν φέρουν απολύτως καμία ευθύνη για:<br>
-            • Τυχόν ατυχήματα ή υλικές ζημιές κατά την οδήγηση ή στάθμευση.<br>
-            • Κλήσεις της Τροχαίας, πρόστιμα ή παράνομη στάθμευση. Ο οδηγός οφείλει να ελέγχει πάντα τη σήμανση (π.χ. ράμπες ΑμεΑ, διαβάσεις, πινακίδες).<br>
-            • Ανακρίβειες στα δεδομένα που αναρτούν άλλοι χρήστες.</p>
+        <h3 style="margin-bottom: 5px; font-size: 16px;">3. Αποποίηση Ευθύνης 🚫</h3>
+        <p style="margin-top: 0; font-size: 14px;">Οι δημιουργοί της εφαρμογής δεν φέρουν απολύτως καμία ευθύνη για:<br>
+        • Τυχόν ατυχήματα ή υλικές ζημιές κατά την οδήγηση ή στάθμευση.<br>
+        • Κλήσεις της Τροχαίας, πρόστιμα ή παράνομη στάθμευση. Ο οδηγός οφείλει να ελέγχει πάντα τη σήμανση (π.χ. ράμπες ΑμεΑ, διαβάσεις, πινακίδες).<br>
+        • Ανακρίβειες στα δεδομένα που αναρτούν άλλοι χρήστες.</p>
 
-            <h3 style="margin-bottom: 5px; font-size: 16px;">4. Υπεύθυνη Χρήση & Karma ⚖️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Απαγορεύεται η σκόπιμη δημοσίευση ψευδών θέσεων ή η κατάχρηση του κουμπιού "Έρχομαι!". Οι λογαριασμοί που δημοσιεύουν κακόβουλα (trolls) ή προσπαθούν να ξεγελάσουν το σύστημα πόντων (Karma) θα αποκλείονται από την εφαρμογή.</p>
+        <h3 style="margin-bottom: 5px; font-size: 16px;">4. Υπεύθυνη Χρήση & Karma ⚖️</h3>
+        <p style="margin-top: 0; font-size: 14px;">Απαγορεύεται η σκόπιμη δημοσίευση ψευδών θέσεων ή η κατάχρηση του κουμπιού "Έρχομαι!". Οι λογαριασμοί που δημοσιεύουν κακόβουλα (trolls) ή προσπαθούν να ξεγελάσουν το σύστημα πόντων (Karma) θα αποκλείονται από την εφαρμογή.</p>
 
-            <h3 style="margin-bottom: 5px; font-size: 16px;">5. Ιδιωτικότητα 🔒</h3>
-            <p style="margin-top: 0; font-size: 14px;">Η εφαρμογή δεν συλλέγει προσωπικά δεδομένα πέρα από την τοποθεσία που εσείς επιλέγετε να μοιραστείτε κατά τη δημοσίευση μιας θέσης. Χρησιμοποιείτε την εφαρμογή αποκλειστικά με δική σας ευθύνη.</p>
+        <h3 style="margin-bottom: 5px; font-size: 16px;">5. Ιδιωτικότητα 🔒</h3>
+        <p style="margin-top: 0; font-size: 14px;">Η εφαρμογή δεν συλλέγει προσωπικά δεδομένα πέρα από την τοποθεσία που εσείς επιλέγετε να μοιραστείτε κατά τη δημοσίευση μιας θέσης. Χρησιμοποιείτε την εφαρμογή αποκλειστικά με δική σου ευθύνη.</p>
 
-            <button id="accept-terms-btn" class="close-modal" style="margin-top: 15px; background-color: #28a745;" onclick="acceptTerms()">Συμφωνώ & Αποδοχή</button>
-        </div>
-    </div>
-
-    <div id="admin-modal" class="modal">
-        <div class="modal-content">
-            <h2 style="color:#e0a800; text-align: center;">👑 Πίνακας Διαχειριστή</h2>
-            
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); margin-bottom: 20px; color: #333;">
-                <h3 style="margin-top: 0;">📊 Live Στατιστικά</h3>
-                <p>• Εγγεγραμμένοι Χρήστες: <b id="stat-users">0</b></p>
-                <p>• Ελεύθερες Πινέζες (🟢/🔴): <b id="stat-active">0</b></p>
-                <p>• Κρατημένες Πινέζες (🟣): <b id="stat-booked">0</b></p>
-            </div>
-
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); color: #333;">
-                <h3 style="margin-top: 0; color: #dc3545;">🚫 Διαχείριση Χρηστών (Ban)</h3>
-                <p style="font-size: 13px; color: #666;">Εισάγετε το email του χρήστη (troll) για να τον διαγράψετε οριστικά από την εφαρμογή.</p>
-                <input type="email" id="ban-email-input" placeholder="π.χ. troll@gmail.com" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-                <button class="occupy-btn" style="margin-top: 10px;" onclick="adminBanUser()">Οριστική Διαγραφή Χρήστη</button>
-            </div>
-
-            <button class="close-modal" style="margin-top: 20px; background-color: #343a40;" onclick="closeModal('admin-modal')">Κλείσιμο</button>
-        </div>
+        <button id="accept-terms-btn" class="close-modal" style="margin-top: 15px; background-color: #28a745;" onclick="acceptTerms()">Συμφωνώ & Αποδοχή</button>
     </div>
 
     <div id="map"></div>
@@ -426,47 +390,6 @@
             } catch (e) { return "Σφάλμα διεύθυνσης"; }
         }
 
-        // --- ΛΟΓΙΚΗ ΓΙΑ ADMIN ---
-        function checkAdminStatus(email) {
-            if (email === "george@parkkarmaapp.com") {
-                document.getElementById('admin-li').style.display = 'block';
-            } else {
-                document.getElementById('admin-li').style.display = 'none';
-            }
-        }
-
-        async function openAdminPanel() {
-            openModal('admin-modal');
-            try {
-                let res = await fetch(`${API_BASE_URL}/admin/stats?email=${userEmail}`);
-                if (res.ok) {
-                    let data = await res.json();
-                    document.getElementById('stat-users').innerText = data.total_users;
-                    document.getElementById('stat-active').innerText = data.active_spots;
-                    document.getElementById('stat-booked').innerText = data.booked_spots;
-                }
-            } catch(e) { alert("Σφάλμα κατά τη φόρτωση των στατιστικών."); }
-        }
-
-        async function adminBanUser() {
-            let trollEmail = document.getElementById('ban-email-input').value.trim();
-            if (!trollEmail) { alert("Παρακαλώ βάλτε ένα έγκυρο email."); return; }
-            
-            if (confirm(`Είστε σίγουρος ότι θέλετε να διαγράψετε οριστικά τον χρήστη ${trollEmail};`)) {
-                try {
-                    let res = await fetch(`${API_BASE_URL}/admin/ban-user?email=${userEmail}&user_to_ban=${trollEmail}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        alert("Ο χρήστης διαγράφηκε επιτυχώς!");
-                        document.getElementById('ban-email-input').value = "";
-                        openAdminPanel(); // Ανανέωση στατιστικών
-                    } else {
-                        let err = await res.json();
-                        alert(err.detail || "Σφάλμα.");
-                    }
-                } catch(e) { alert("Αποτυχία σύνδεσης με τον server."); }
-            }
-        }
-
         async function handleCredentialResponse(response) {
             let localSpots = JSON.parse(localStorage.getItem('parkkarma_saved_spots')) || [];
             let res = await fetch(`${API_BASE_URL}/auth/google`, {
@@ -481,7 +404,6 @@
                 savedPositions = data.saved_locations || [];
                 showAllSavedMarkers();
                 updateUIForLoggedInUser(data.karma);
-                checkAdminStatus(userEmail);
             }
         }
 
@@ -511,21 +433,13 @@
             } catch (e) {}
         }
 
-        if (userEmail) { 
-            setTimeout(() => { 
-                updateUIForLoggedInUser(0); 
-                fetchKarma(); 
-                checkAdminStatus(userEmail);
-            }, 500); 
-        } 
-        else { 
-            savedPositions = JSON.parse(localStorage.getItem('parkkarma_saved_spots')) || []; 
-            setTimeout(showAllSavedMarkers, 500); 
-        }
+        if (userEmail) { setTimeout(() => { updateUIForLoggedInUser(0); fetchKarma(); }, 500); } 
+        else { savedPositions = JSON.parse(localStorage.getItem('parkkarma_saved_spots')) || []; setTimeout(showAllSavedMarkers, 500); }
 
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
         
         function openModal(id) { 
+            // Αν οι όροι δεν έχουν γίνει αποδεκτοί, κλειδώνουμε τον χρήστη μόνο στο terms-modal
             if (localStorage.getItem('parkkarma_terms_accepted') !== 'true' && id !== 'terms-modal') {
                 return;
             }
@@ -534,6 +448,7 @@
         }
         
         function closeModal(id) { 
+            // Εμποδίζει το κλείσιμο των όρων αν δεν πατηθεί το "Συμφωνώ"
             if (localStorage.getItem('parkkarma_terms_accepted') !== 'true' && id === 'terms-modal') {
                 alert("Πρέπει να αποδεχτείτε τους όρους χρήσης για να χρησιμοποιήσετε την εφαρμογή.");
                 return;
@@ -541,6 +456,7 @@
             document.getElementById(id).style.display = 'none'; 
         }
 
+        // --- ΝΕΑ ΛΟΓΙΚΗ ΓΙΑ ΑΥΤΟΜΑΤΗ ΕΜΦΑΝΙΣΗ ΟΡΩΝ ---
         function checkTermsOnStartup() {
             if (localStorage.getItem('parkkarma_terms_accepted') !== 'true') {
                 document.getElementById('terms-modal').style.display = 'block';
@@ -788,6 +704,7 @@
                     let color = remaining <= 3 ? 'red' : 'green';
                     if (isBooked) color = 'violet'; 
                     
+                    // RADAR CHECK
                     if (color === 'green' && !isBooked && !notifiedSpots.has(spot.id) && userMarker) {
                         let distance = Math.round(userMarker.getLatLng().distanceTo(L.latLng(spot.latitude, spot.longitude)));
                         if (distance < 1000) { 
@@ -845,10 +762,8 @@
         }
 
         resetUserMarker(); loadSpots(); 
-        
-        // --- ΑΥΞΗΣΗ ΤΟΥ ΧΡΟΝΟΥ ΓΙΑ ΑΝΤΟΧΗ ΣΤΟΝ FREE SERVER (20 δευτερόλεπτα) ---
-        setInterval(loadSpots, 20000);
-        setInterval(fetchKarma, 20000);
+        setInterval(loadSpots, 5000);
+        setInterval(fetchKarma, 10000);
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -858,6 +773,7 @@
             });
         }
 
+        // Εκτέλεση ελέγχου όρων αμέσως μόλις φορτώσει η σελίδα
         window.addEventListener('DOMContentLoaded', checkTermsOnStartup);
     </script>
 </body>
