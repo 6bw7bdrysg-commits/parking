@@ -275,6 +275,18 @@ async def admin_ban_user(email: str, user_to_ban: str, db: Session = Depends(get
     db.delete(user)
     db.commit()
     return {"message": f"Ο χρήστης {user_to_ban} διαγράφηκε επιτυχώς."}
+# --- ΦΟΡΤΩΣΗ ΤΗΣ ΙΣΤΟΣΕΛΙΔΑΣ (FRONTEND) ---
+@app.get("/")
+async def serve_homepage():
+    # Όταν κάποιος μπαίνει στο site, δείξε το index.html
+    return FileResponse("index.html")
+
+@app.get("/{filename:path}")
+async def serve_static_files(filename: str):
+    # Φόρτωσε τα υπόλοιπα αρχεία (π.χ. manifest.json, sw.js, κλπ)
+    if os.path.isfile(filename):
+        return FileResponse(filename)
+    raise HTTPException(status_code=404, detail="Not Found")
 
 if __name__ == "__main__":
     import uvicorn
