@@ -116,7 +116,7 @@
         body.dark-mode .popup-inner { background:#222; color:white; }
         body.dark-mode .tag-dropdown { background: #333; color: white; border: 1px solid #555; }
 
-        /* RESPONSIVE CSS ΓΙΑ ΚΙΝΗΤΑ (Μίκρυνση Μενού) */
+        /* RESPONSIVE CSS ΓΙΑ ΚΙΝΗΤΑ */
         @media (max-width: 600px) {
             .controls-container { top: 35px; right: 5px; gap: 6px; }
             .menu-btn, .my-location-btn, .my-car-btn { padding: 6px 8px; font-size: 12px; }
@@ -223,37 +223,30 @@
         <h3 style="margin-bottom: 5px;">7. Dark Mode & Φίλτρα 🌙</h3>
         <p style="margin-top: 0; font-size: 14px;">Οδηγείς βράδυ; Άνοιξε το Σκοτεινό Θέμα από το μενού. Ψάχνεις πάρκινγκ για ΑμεΑ ή μεγάλο όχημα; Βάλε φίλτρα!</p>
 
-        <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin-top: 15px;">
+        <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin-top: 15px; color: #333;">
             <b>Με λίγα λόγια:</b> Είδες ελεύθερο; Πήγαινε. Φεύγεις; Ενημέρωσε. Βοηθάς την πόλη σου!
         </div>
 
-        <button class="close-modal" onclick="closeModal('instructions-modal')">Κλείσιμο</button>
+        <button class="close-modal" style="margin-top: 15px;" onclick="closeModal('instructions-modal')">Κλείσιμο</button>
     </div>
 
     <div id="about-modal" class="modal">
         <h2 style="color:#007bff;">👥 Σχετικά με εμάς</h2>
-        
         <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις ατέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
-        
         <p>Σκεφτήκαμε το εξής απλό: Γιατί να ψάχνουμε στα τυφλά, όταν μπορούμε να γίνουμε όλοι μαζί ένας «ζωντανός χάρτης»; Όταν φεύγει ένας, μπορεί να έρθει απευθείας ο επόμενος. Χωρίς άγχος, χωρίς χαμένη βενζίνη.</p>
-        
-        <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin: 15px 0;">
+        <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin: 15px 0; color: #333;">
             <p style="margin: 0;">Σκοπός μας δεν είναι απλώς να φτιάξουμε άλλη μια εφαρμογή, αλλά μια <b>κοινότητα αλληλεγγύης</b>. Να μοιραζόμαστε τον χώρο και να κάνουμε την πόλη μας πιο φιλική και την καθημερινότητά μας πιο εύκολη.</p>
         </div>
-
         <h3 style="color:#333; margin-bottom: 5px;">🚀 Το Μέλλον</h3>
         <p style="margin-top: 0; font-size: 14px;">Αυτό είναι μόνο η αρχή! Το όραμά μας είναι το ParkKarma να εξελιχθεί στον απόλυτο συνοδηγό σου. Σύντομα θα προσθέσουμε τρόπους επικοινωνίας (Social Media & Email) για να ακούμε τις ιδέες σου, τις προτάσεις ή ακόμα και τα προβλήματα που συναντάς.</p>
-        
         <p style="text-align: center; font-weight: bold; color: #28a745; font-size: 16px; margin-top: 20px;">
             Σε ευχαριστούμε που δίνεις και παίρνεις το καλό... Karma! 🚙✨
         </p>
-
         <button class="close-modal" style="margin-top: 15px;" onclick="closeModal('about-modal')">Κλείσιμο</button>
     </div>
 
     <div id="terms-modal" class="modal">
         <h2 style="color:#007bff;">📜 Όροι Χρήσης & Αποποίηση Ευθύνης</h2>
-        
         <p style="font-size: 14px; color: #555;">Παρακαλούμε διαβάστε προσεκτικά τους παρακάτω όρους πριν χρησιμοποιήσετε το ParkKarma.</p>
 
         <h3 style="margin-bottom: 5px; font-size: 16px;">1. Ασφαλής Οδήγηση (Σημαντικό!) ⚠️</h3>
@@ -272,9 +265,9 @@
         <p style="margin-top: 0; font-size: 14px;">Απαγορεύεται η σκόπιμη δημοσίευση ψευδών θέσεων ή η κατάχρηση του κουμπιού "Έρχομαι!". Οι λογαριασμοί που δημοσιεύουν κακόβουλα (trolls) ή προσπαθούν να ξεγελάσουν το σύστημα πόντων (Karma) θα αποκλείονται από την εφαρμογή.</p>
 
         <h3 style="margin-bottom: 5px; font-size: 16px;">5. Ιδιωτικότητα 🔒</h3>
-        <p style="margin-top: 0; font-size: 14px;">Η εφαρμογή δεν συλλέγει προσωπικά δεδομένα πέρα από την τοποθεσία που εσείς επιλέγετε να μοιραστείτε κατά τη δημοσίευση μιας θέσης. Χρησιμοποιείτε την εφαρμογή αποκλειστικά με δική σας ευθύνη.</p>
+        <p style="margin-top: 0; font-size: 14px;">Η εφαρμογή δεν συλλέγει προσωπικά δεδομένα πέρα από την τοποθεσία που εσείς επιλέγετε να μοιραστείτε κατά τη δημοσίευση μιας θέσης. Χρησιμοποιείτε την εφαρμογή αποκλειστικά με δική σου ευθύνη.</p>
 
-        <button class="close-modal" style="margin-top: 15px;" onclick="closeModal('terms-modal')">Συμφωνώ & Κλείσιμο</button>
+        <button id="accept-terms-btn" class="close-modal" style="margin-top: 15px; background-color: #28a745;" onclick="acceptTerms()">Συμφωνώ & Αποδοχή</button>
     </div>
 
     <div id="map"></div>
@@ -367,7 +360,7 @@
             let icon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
             
             myCarMarker = L.marker([pos.lat, pos.lng], {icon: icon}).addTo(map)
-                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}&travelmode=walking', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
+                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('http://googleusercontent.com/maps.google.com/maps?daddr=${pos.lat},${pos.lng}&travelmode=walking', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
         }
         function findMyCar() {
             let data = localStorage.getItem('parkkarma_my_car');
@@ -444,8 +437,36 @@
         else { savedPositions = JSON.parse(localStorage.getItem('parkkarma_saved_spots')) || []; setTimeout(showAllSavedMarkers, 500); }
 
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
-        function openModal(id) { document.getElementById(id).style.display = 'block'; toggleMenu(); }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function openModal(id) { 
+            // Αν οι όροι δεν έχουν γίνει αποδεκτοί, κλειδώνουμε τον χρήστη μόνο στο terms-modal
+            if (localStorage.getItem('parkkarma_terms_accepted') !== 'true' && id !== 'terms-modal') {
+                return;
+            }
+            document.getElementById(id).style.display = 'block'; 
+            if(document.getElementById('menu-overlay').style.display === 'block') toggleMenu(); 
+        }
+        
+        function closeModal(id) { 
+            // Εμποδίζει το κλείσιμο των όρων αν δεν πατηθεί το "Συμφωνώ"
+            if (localStorage.getItem('parkkarma_terms_accepted') !== 'true' && id === 'terms-modal') {
+                alert("Πρέπει να αποδεχτείτε τους όρους χρήσης για να χρησιμοποιήσετε την εφαρμογή.");
+                return;
+            }
+            document.getElementById(id).style.display = 'none'; 
+        }
+
+        // --- ΝΕΑ ΛΟΓΙΚΗ ΓΙΑ ΑΥΤΟΜΑΤΗ ΕΜΦΑΝΙΣΗ ΟΡΩΝ ---
+        function checkTermsOnStartup() {
+            if (localStorage.getItem('parkkarma_terms_accepted') !== 'true') {
+                document.getElementById('terms-modal').style.display = 'block';
+            }
+        }
+        
+        function acceptTerms() {
+            localStorage.setItem('parkkarma_terms_accepted', 'true');
+            document.getElementById('terms-modal').style.display = 'none';
+        }
 
         async function openLeaderboard() {
             openModal('leaderboard-modal');
@@ -703,7 +724,7 @@
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let tagHtml = spot.tag ? `<div class="spot-tag">${spot.tag}</div><br>` : "";
                     
-                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')">🚗 Οδηγίες GPS</button>`;
+                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('http://googleusercontent.com/maps.google.com/maps?daddr=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
                         if (bookedByMe) {
@@ -751,6 +772,9 @@
                     .catch(err => console.log('Service Worker Failed:', err));
             });
         }
+
+        // Εκτέλεση ελέγχου όρων αμέσως μόλις φορτώσει η σελίδα
+        window.addEventListener('DOMContentLoaded', checkTermsOnStartup);
     </script>
 </body>
 </html>
