@@ -67,7 +67,7 @@ class OfficialParking(Base):
     name = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)
-    photo_url = Column(String, nullable=True) # Εδώ πλέον θα αποθηκεύουμε ένα JSON array με τις 5 φωτό
+    photo_url = Column(String, nullable=True) # JSON Array
     phone = Column(String, nullable=True)
     address = Column(String, nullable=True)
     hours_weekday = Column(String, default="08:00-21:00")
@@ -130,8 +130,9 @@ class OfficialParkingStatusUpdate(BaseModel):
     status: str
     is_closed_today: bool
 
-# --- ADMIN EMAIL ---
+# --- ADMIN EMAIL & SECRET CODE ---
 ADMIN_EMAIL = "george@parkkarmaapp.com"
+ADMIN_SECRET_CODE = "GEORGE2026"
 
 # --- ENDPOINTS ΓΙΑ ΑΠΛΟΥΣ ΧΡΗΣΤΕΣ ---
 
@@ -212,7 +213,6 @@ async def search_spots(db: Session = Depends(get_db)):
     spots_list = []
     for s in active_spots:
         reports_count = db.query(SpotReport).filter(SpotReport.spot_id == s.id).count()
-        
         if s.user_email:
             user_spots = db.query(ParkingSpot.id).filter(ParkingSpot.user_email == s.user_email).all()
         else:
@@ -251,16 +251,13 @@ async def report_spot(spot_id: int, reporter_id: str, db: Session = Depends(get_
     new_report = SpotReport(spot_id=spot_id, reporter_id=reporter_id)
     db.add(new_report)
     db.commit()
-    
-    return {"message": "Η αναφορά καταχωρήθηκε επιτυχώς! Ο διαχειριστής θα την ελέγξει σύντομα."}
+    return {"message": "Η αναφορά καταχωρήθηκε επιτυχώς!"}
 
 @app.post("/book-spot/{spot_id}")
 async def book_spot(spot_id: int, occupier_id: str, db: Session = Depends(get_db)):
     spot = db.query(ParkingSpot).filter(ParkingSpot.id == spot_id).first()
-    if not spot:
-        raise HTTPException(status_code=404, detail="Η θέση δεν βρέθηκε")
-    if spot.is_booked:
-        raise HTTPException(status_code=400, detail="Η θέση είναι ήδη κρατημένη")
+    if not spot: raise HTTPException(status_code=404, detail="Η θέση δεν βρέθηκε")
+    if spot.is_booked: raise HTTPException(status_code=400, detail="Η θέση είναι ήδη κρατημένη")
     
     spot.is_booked = True
     spot.booked_by = occupier_id
@@ -280,26 +277,20 @@ async def unbook_spot(spot_id: int, occupier_id: str, db: Session = Depends(get_
 @app.delete("/occupy-spot/{spot_id}")
 async def occupy_spot(spot_id: int, occupier_email: str, db: Session = Depends(get_db)):
     spot = db.query(ParkingSpot).filter(ParkingSpot.id == spot_id).first()
-    if not spot:
-        raise HTTPException(status_code=404, detail="Δεν βρέθηκε η θέση")
+    if not spot: raise HTTPException(status_code=404, detail="Δεν βρέθηκε")
         
     if spot.user_email and spot.user_email != occupier_email:
         creator = db.query(User).filter(User.email == spot.user_email).first()
         if creator:
             today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-            daily_earned = db.query(KarmaTransaction).filter(
-                KarmaTransaction.user_email == creator.email,
-                KarmaTransaction.created_at >= today_start
-            ).count() * 10
-            
+            daily_earned = db.query(KarmaTransaction).filter(KarmaTransaction.user_email == creator.email, KarmaTransaction.created_at >= today_start).count() * 10
             if daily_earned < 40:
                 creator.karma += 10
-                new_tx = KarmaTransaction(user_email=creator.email, amount=10, created_at=datetime.utcnow())
-                db.add(new_tx)
+                db.add(KarmaTransaction(user_email=creator.email, amount=10, created_at=datetime.utcnow()))
                 
     db.delete(spot)
     db.commit()
-    return {"message": "Η θέση καταλήφθηκε επιτυχώς"}
+    return {"message": "Επιτυχία"}
 
 @app.post("/save-location")
 async def save_location(loc: SavedLocationCreate, db: Session = Depends(get_db)):
@@ -312,14 +303,11 @@ async def save_location(loc: SavedLocationCreate, db: Session = Depends(get_db))
 @app.delete("/delete-saved-location/{db_id}")
 async def delete_saved_location(db_id: int, db: Session = Depends(get_db)):
     loc = db.query(SavedLocation).filter(SavedLocation.id == db_id).first()
-    if loc:
-        db.delete(loc)
-        db.commit()
+    if loc: db.delete(loc); db.commit()
     return {"message": "Διαγράφηκε"}
 
 
 # --- ΕΠΙΣΗΜΑ ΠΑΡΚΙΝΓΚ (B2B) ---
-
 @app.get("/official-parkings")
 async def get_official_parkings(db: Session = Depends(get_db)):
     parkings = db.query(OfficialParking).all()
@@ -327,10 +315,8 @@ async def get_official_parkings(db: Session = Depends(get_db)):
     for p in parkings:
         photo_list = []
         if p.photo_url:
-            try:
-                photo_list = json.loads(p.photo_url)
-            except:
-                pass
+            try: photo_list = json.loads(p.photo_url)
+            except: pass
         res.append({
             "id": p.id,
             "owner_email": p.owner_email,
@@ -350,93 +336,130 @@ async def get_official_parkings(db: Session = Depends(get_db)):
 
 @app.post("/admin/official-parking")
 async def add_official_parking(parking: OfficialParkingCreate, email: str = Query(...), db: Session = Depends(get_db)):
-    if email != ADMIN_EMAIL:
-        raise HTTPException(status_code=403, detail="Δεν έχετε δικαιώματα διαχειριστή.")
+    if email != ADMIN_EMAIL: raise HTTPException(status_code=403)
     
     new_parking = OfficialParking(
-        owner_email=parking.owner_email,
-        name=parking.name,
-        latitude=parking.latitude,
-        longitude=parking.longitude,
-        photo_url=json.dumps(parking.photos),
-        phone=parking.phone,
-        address=parking.address,
-        hours_weekday=parking.hours_weekday,
-        hours_saturday=parking.hours_saturday,
-        hours_sunday=parking.hours_sunday
+        owner_email=parking.owner_email, name=parking.name,
+        latitude=parking.latitude, longitude=parking.longitude,
+        photo_url=json.dumps(parking.photos), phone=parking.phone,
+        address=parking.address, hours_weekday=parking.hours_weekday,
+        hours_saturday=parking.hours_saturday, hours_sunday=parking.hours_sunday
     )
     db.add(new_parking)
     db.commit()
     return {"message": "Το Πάρκινγκ προστέθηκε επιτυχώς!"}
 
+@app.put("/admin/official-parking/{p_id}")
+async def update_official_parking(p_id: int, parking: OfficialParkingCreate, email: str = Query(...), db: Session = Depends(get_db)):
+    if email != ADMIN_EMAIL: raise HTTPException(status_code=403)
+    p = db.query(OfficialParking).filter(OfficialParking.id == p_id).first()
+    if not p: raise HTTPException(status_code=404)
+    
+    p.owner_email = parking.owner_email
+    p.name = parking.name
+    p.latitude = parking.latitude
+    p.longitude = parking.longitude
+    if parking.photos and len(parking.photos) > 0:
+        p.photo_url = json.dumps(parking.photos)
+    p.phone = parking.phone
+    p.address = parking.address
+    p.hours_weekday = parking.hours_weekday
+    p.hours_saturday = parking.hours_saturday
+    p.hours_sunday = parking.hours_sunday
+    db.commit()
+    return {"message": "Το Πάρκινγκ ενημερώθηκε επιτυχώς!"}
+
+@app.delete("/admin/official-parking/{p_id}")
+async def delete_official_parking(p_id: int, email: str = Query(...), secret_code: str = Query(...), db: Session = Depends(get_db)):
+    if email != ADMIN_EMAIL: raise HTTPException(status_code=403)
+    if secret_code != ADMIN_SECRET_CODE: raise HTTPException(status_code=403, detail="Λάθος Κωδικός Ασφαλείας!")
+    
+    p = db.query(OfficialParking).filter(OfficialParking.id == p_id).first()
+    if p:
+        db.delete(p)
+        db.commit()
+    return {"message": "Το Πάρκινγκ διαγράφηκε οριστικά."}
+
 @app.get("/owner/my-parking")
 async def get_my_parking(email: str, db: Session = Depends(get_db)):
     parking = db.query(OfficialParking).filter(OfficialParking.owner_email == email).first()
-    if not parking:
-        raise HTTPException(status_code=404, detail="Δεν βρέθηκε πάρκινγκ.")
+    if not parking: raise HTTPException(status_code=404)
     return parking
 
 @app.put("/owner/update-status")
 async def update_parking_status(email: str, update_data: OfficialParkingStatusUpdate, db: Session = Depends(get_db)):
     parking = db.query(OfficialParking).filter(OfficialParking.owner_email == email).first()
-    if not parking:
-        raise HTTPException(status_code=404, detail="Δεν βρέθηκε πάρκινγκ.")
+    if not parking: raise HTTPException(status_code=404)
     
     parking.status = update_data.status
     parking.is_closed_today = update_data.is_closed_today
     db.commit()
-    return {"message": "Η κατάσταση ενημερώθηκε επιτυχώς!"}
+    return {"message": "Η κατάσταση ενημερώθηκε!"}
 
-
-# --- ADMIN ENDPOINTS ---
-
+# --- ADMIN ENDPOINTS (ΧΡΗΣΤΕΣ & ΣΤΑΤΙΣΤΙΚΑ) ---
 @app.get("/admin/stats")
 async def get_admin_stats(email: str, db: Session = Depends(get_db)):
-    if email != ADMIN_EMAIL:
-        raise HTTPException(status_code=403, detail="Δεν έχετε δικαιώματα διαχειριστή.")
-    
-    total_users = db.query(User).count()
-    active_spots = db.query(ParkingSpot).filter(ParkingSpot.is_booked == False).count()
-    booked_spots = db.query(ParkingSpot).filter(ParkingSpot.is_booked == True).count()
-    total_official = db.query(OfficialParking).count()
-    
+    if email != ADMIN_EMAIL: raise HTTPException(status_code=403)
     return {
-        "total_users": total_users,
-        "active_spots": active_spots,
-        "booked_spots": booked_spots,
-        "total_official": total_official
+        "total_users": db.query(User).count(),
+        "active_spots": db.query(ParkingSpot).filter(ParkingSpot.is_booked == False).count(),
+        "booked_spots": db.query(ParkingSpot).filter(ParkingSpot.is_booked == True).count(),
+        "total_official": db.query(OfficialParking).count()
     }
+
+@app.get("/admin/users-list")
+async def get_admin_users_list(email: str, db: Session = Depends(get_db)):
+    if email != ADMIN_EMAIL: raise HTTPException(status_code=403)
+    
+    users = db.query(User).all()
+    emails_data = []
+    for u in users:
+        user_spots = db.query(ParkingSpot.id).filter(ParkingSpot.user_email == u.email).all()
+        spot_ids = [s.id for s in user_spots]
+        reports = db.query(SpotReport).filter(SpotReport.spot_id.in_(spot_ids)).count() if spot_ids else 0
+        emails_data.append({"email": u.email, "reports": reports, "karma": u.karma})
+        
+    anon_spots = db.query(ParkingSpot).filter(ParkingSpot.user_email == None, ParkingSpot.device_id != None).all()
+    anon_dict = {}
+    for s in anon_spots:
+        did = s.device_id
+        if did not in anon_dict: anon_dict[did] = 0
+        reps = db.query(SpotReport).filter(SpotReport.spot_id == s.id).count()
+        anon_dict[did] += reps
+        
+    anons_data = [{"device_id": k, "reports": v} for k, v in anon_dict.items()]
+    
+    emails_data.sort(key=lambda x: (-x["reports"], x["email"].lower()))
+    anons_data.sort(key=lambda x: (-x["reports"], x["device_id"].lower()))
+    
+    return {"emails": emails_data, "anons": anons_data}
 
 @app.delete("/admin/ban-user")
 async def admin_ban_user(email: str, user_to_ban: str, db: Session = Depends(get_db)):
-    if email != ADMIN_EMAIL:
-        raise HTTPException(status_code=403, detail="Δεν έχετε δικαιώματα διαχειριστή.")
+    if email != ADMIN_EMAIL: raise HTTPException(status_code=403)
         
     if "anon_" in user_to_ban:
         db.query(ParkingSpot).filter(ParkingSpot.device_id == user_to_ban).delete()
         db.commit()
-        return {"message": f"Οι θέσεις της ανώνυμης συσκευής {user_to_ban} διαγράφηκαν."}
+        return {"message": f"Οι θέσεις της ανώνυμης συσκευής διαγράφηκαν."}
     else:
         user = db.query(User).filter(User.email == user_to_ban).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="Ο χρήστης δεν βρέθηκε.")
-        db.query(SavedLocation).filter(SavedLocation.user_email == user_to_ban).delete()
-        db.query(ParkingSpot).filter(ParkingSpot.user_email == user_to_ban).delete()
-        db.query(KarmaTransaction).filter(KarmaTransaction.user_email == user_to_ban).delete()
-        db.delete(user)
-        db.commit()
-        return {"message": f"Ο χρήστης {user_to_ban} διαγράφηκε επιτυχώς."}
+        if user:
+            db.query(SavedLocation).filter(SavedLocation.user_email == user_to_ban).delete()
+            db.query(ParkingSpot).filter(ParkingSpot.user_email == user_to_ban).delete()
+            db.query(KarmaTransaction).filter(KarmaTransaction.user_email == user_to_ban).delete()
+            db.delete(user)
+            db.commit()
+        return {"message": f"Ο χρήστης διαγράφηκε επιτυχώς."}
 
-# --- ΦΟΡΤΩΣΗ ΤΗΣ ΙΣΤΟΣΕΛΙΔΑΣ (FRONTEND) ---
+# --- ΦΟΡΤΩΣΗ ΤΗΣ ΙΣΤΟΣΕΛΙΔΑΣ ---
 @app.get("/")
-async def serve_homepage():
-    return FileResponse("index.html")
+async def serve_homepage(): return FileResponse("index.html")
 
 @app.get("/{filename:path}")
 async def serve_static_files(filename: str):
-    if os.path.isfile(filename):
-        return FileResponse(filename)
-    raise HTTPException(status_code=404, detail="Not Found")
+    if os.path.isfile(filename): return FileResponse(filename)
+    raise HTTPException(status_code=404)
 
 if __name__ == "__main__":
     import uvicorn
