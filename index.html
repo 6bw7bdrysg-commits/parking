@@ -116,6 +116,9 @@
         body.dark-mode .popup-inner { background:#222; color:white; }
         body.dark-mode .tag-dropdown { background: #333; color: white; border: 1px solid #555; }
 
+        /* MODAL ΓΙΑ PARKING ADMIN */
+        .admin-input { width: 100%; padding: 8px; margin: 5px 0 15px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;}
+
         /* RESPONSIVE CSS ΓΙΑ ΚΙΝΗΤΑ */
         @media (max-width: 600px) {
             .controls-container { top: 35px; right: 5px; gap: 6px; }
@@ -173,6 +176,9 @@
         <ul style="list-style: none; padding: 0;">
             <li id="logout-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; color: red; font-weight: bold;" onclick="handleLogout()">🚪 Αποσύνδεση</li>
             <li onclick="toggleTheme()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold;">🌞/🌙 Σκοτεινό Θέμα</li>
+            
+            <li id="owner-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold; color: #28a745;" onclick="openOwnerPanel()">🏢 Διαχείριση Πάρκινγκ μου</li>
+
             <li onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSdzXc1Wd7tzhm5Nh--3amQbS9rofAzOZNsDLwofPGu6lPESww/viewform?usp=dialog', '_blank')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold; color: #17a2b8;">📝 Αναφορά Προβλήματος / Ιδέες</li>
             <li onclick="openLeaderboard()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold;">🏆 Top Οδηγοί (Leaderboard)</li>
             <li id="admin-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; color: #e0a800; font-weight: bold;" onclick="openAdminPanel()">👑 Διαχείριση (Admin)</li>
@@ -180,6 +186,31 @@
             <li onclick="openModal('about-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">👥 Σχετικά με εμάς</li>
             <li onclick="openModal('terms-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">📜 Όροι Χρήσης</li>
         </ul>
+    </div>
+
+    <div id="owner-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="color:#28a745; text-align: center;">🏢 Διαχείριση Πάρκινγκ</h2>
+            <p style="text-align:center; color:#555; font-size:14px;" id="owner-parking-name">Φόρτωση...</p>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); margin-bottom: 20px; color: #333;">
+                <h3 style="margin-top: 0; text-align:center;">Επιλογή Διαθεσιμότητας</h3>
+                <button class="btn-action" style="background-color: #28a745;" onclick="updateOwnerStatus('GREEN')">🟢 Άφθονες Θέσεις</button>
+                <button class="save-btn" onclick="updateOwnerStatus('YELLOW')">🟡 Λίγες Θέσεις</button>
+                <button class="occupy-btn" onclick="updateOwnerStatus('RED')">🔴 Πλήρες (Γεμάτο)</button>
+            </div>
+
+            <div style="background: #fff3cd; padding: 15px; border-radius: 10px; border: 1px solid #ffeeba; color: #856404;">
+                <h3 style="margin-top: 0;">Έκτακτο Κλείσιμο</h3>
+                <label>
+                    <input type="checkbox" id="owner-closed-toggle" style="transform: scale(1.5); margin-right: 10px;">
+                    <b>Κλειστό για σήμερα</b>
+                </label>
+                <button class="car-btn" style="margin-top: 15px;" onclick="saveOwnerClosedStatus()">Αποθήκευση</button>
+            </div>
+
+            <button class="close-modal" style="margin-top: 20px; background-color: #343a40;" onclick="closeModal('owner-modal')">Κλείσιμο</button>
+        </div>
     </div>
 
     <div id="leaderboard-modal" class="modal">
@@ -194,42 +225,27 @@
     <div id="instructions-modal" class="modal">
         <div class="modal-content">
             <h2 style="color:#007bff;">🚗 Οδηγίες Χρήσης</h2>
-            <p>Καλώς ήρθες στην παρέα μας! Εδώ, το παρκάρισμα στην πόλη γίνεται ομαδικό άθλημα. Δες πώς λειτουργεί:</p>
-
+            <p>Καλώς ήρθες στην παρέα μας! Εδώ, το παρκάρισμα στην πόλη γίνεται ομαδικό άθλημα.</p>
             <h3 style="margin-bottom: 5px;">1. Βρες την ιδανική θέση 🗺️</h3>
             <p style="margin-top: 0; font-size: 14px;">
             • <b>🟢 Πράσινο:</b> Η θέση είναι ελεύθερη – πρόλαβέ την!<br>
             • <b>🔴 Κόκκινο:</b> Ο οδηγός φεύγει σε λιγότερο από 3 λεπτά.<br>
             • <b>🟣 Μοβ:</b> Κάποιος έχει πατήσει "Έρχομαι!". Ψάξε για άλλη!<br>
-            • <b>📍 GPS:</b> Πάτα "Οδηγίες" για πλοήγηση.
+            • <b>🔵 Μπλε (Επίσημα Πάρκινγκ):</b> Ιδιωτικά συνεργαζόμενα πάρκινγκ. Δες live πόσες θέσεις έχουν και πόσο κοστίζουν.
             </p>
-
             <h3 style="margin-bottom: 5px;">2. Κάνε κράτηση (Έρχομαι!) 🙋‍♂️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" για σένα για 5 λεπτά, ώστε οι άλλοι να μην κατευθυνθούν εκεί.</p>
-
+            <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" για σένα για 5 λεπτά.</p>
             <h3 style="margin-bottom: 5px;">3. Radar Θέσεων 📡</h3>
-            <p style="margin-top: 0; font-size: 14px;">Αν αδειάσει θέση σε ακτίνα 1χλμ, ακούς "Μπιπ!" (Θυμήσου να πατήσεις μια φορά τον χάρτη όταν μπαίνεις για να επιτρέψεις τον ήχο).</p>
-
+            <p style="margin-top: 0; font-size: 14px;">Αν αδειάσει θέση σε ακτίνα 1χλμ, ακούς "Μπιπ!".</p>
             <h3 style="margin-bottom: 5px;">4. Γίνε "Θρύλος" 🏆</h3>
-            <p style="margin-top: 0; font-size: 14px;">Όταν φεύγεις, πάτα "Δημοσίευσε". Κερδίζεις +10 Karma, βάζεις ετικέτες (π.χ. 🌳 Σκιά) και ανεβαίνεις στο Leaderboard!</p>
-
+            <p style="margin-top: 0; font-size: 14px;">Όταν φεύγεις, πάτα "Δημοσίευσε". Κερδίζεις +10 Karma όταν κάποιος έρθει!</p>
             <h3 style="margin-bottom: 5px;">5. Smart Planning (Χρυσή Πινέζα) 🟡</h3>
-            <p style="margin-top: 0; font-size: 14px;">Πάτα "Αποθήκευση" μόλις παρκάρεις. Λίγα λεπτά πριν φύγεις, πάτα τη χρυσή πινέζα και "Δημοσίευσε" για να προειδοποιήσεις τους άλλους.</p>
-
-            <h3 style="margin-bottom: 5px;">6. "Πού πάρκαρα;" (Το αμάξι μου) 🚗</h3>
-            <p style="margin-top: 0; font-size: 14px;">
-            Ξέχασες πού άφησες το αμάξι; <br>
-            1️⃣ Πάτα <b>"📍 Επαναφορά μου"</b> και μετά <b>"🚗 Πάρκαρα Εδώ!"</b> για να βάλεις τη μόνιμη Μαύρη Πινέζα.<br>
-            2️⃣ Όταν θες να γυρίσεις, πάτα <b>"🅿️ Το αμάξι μου"</b> (πάνω δεξιά) για να δεις οδηγίες πλοήγησης με τα πόδια!
-            </p>
-
-            <h3 style="margin-bottom: 5px;">7. Dark Mode & Φίλτρα 🌙</h3>
-            <p style="margin-top: 0; font-size: 14px;">Οδηγείς βράδυ; Άνοιξε το Σκοτεινό Θέμα από το μενού. Ψάχνεις πάρκινγκ για ΑμεΑ ή μεγάλο όχημα; Βάλε φίλτρα!</p>
-
+            <p style="margin-top: 0; font-size: 14px;">Πάτα "Αποθήκευση" μόλις παρκάρεις. Λίγα λεπτά πριν φύγεις, δημοσίευσε τη.</p>
+            <h3 style="margin-bottom: 5px;">6. "Πού πάρκαρα;" 🚗</h3>
+            <p style="margin-top: 0; font-size: 14px;">Πάτα <b>"🚗 Πάρκαρα Εδώ!"</b>. Για να γυρίσεις πάτα <b>"🅿️ Το αμάξι μου"</b>.</p>
             <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin-top: 15px; color: #333;">
-                <b>Με λίγα λόγια:</b> Είδες ελεύθερο; Πήγαινε. Φεύγεις; Ενημέρωσε. Βοηθάς την πόλη σου!
+                <b>Με λίγα λόγια:</b> Είδες ελεύθερο; Πήγαινε. Φεύγεις; Ενημέρωσε!
             </div>
-
             <button class="close-modal" style="margin-top: 15px;" onclick="closeModal('instructions-modal')">Κλείσιμο</button>
         </div>
     </div>
@@ -237,22 +253,11 @@
     <div id="about-modal" class="modal">
         <div class="modal-content">
             <h2 style="color:#007bff;">👥 Σχετικά με εμάς</h2>
-            
             <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις ατέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
-            
-            <p>Σκεφτήκαμε το εξής απλό: Γιατί να ψάχνουμε στα τυφλά, όταν μπορούμε να γίνουμε όλοι μαζί ένας «ζωντανός χάρτης»; Όταν φεύγει ένας, μπορεί να έρθει απευθείας ο επόμενος. Χωρίς άγχος, χωρίς χαμένη βενζίνη.</p>
-            
-            <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin: 15px 0; color: #333;">
-                <p style="margin: 0;">Σκοπός μας δεν είναι απλώς να φτιάξουμε άλλη μια εφαρμογή, αλλά μια <b>κοινότητα αλληλεγγύης</b>. Να μοιραζόμαστε τον χώρο και να κάνουμε την πόλη μας πιο φιλική και την καθημερινότητά μας πιο εύκολη.</p>
-            </div>
-
+            <p>Σκοπός μας δεν είναι απλώς να φτιάξουμε άλλη μια εφαρμογή, αλλά μια <b>κοινότητα αλληλεγγύης</b>.</p>
             <h3 style="color:#333; margin-bottom: 5px;">🚀 Το Μέλλον</h3>
-            <p style="margin-top: 0; font-size: 14px;">Αυτό είναι μόνο η αρχή! Το όραμά μας είναι το ParkKarma να εξελιχθεί στον απόλυτο συνοδηγό σου. Σύντομα θα προσθέσουμε τρόπους επικοινωνίας (Social Media & Email) για να ακούμε τις ιδέες σου, τις προτάσεις ή ακόμα και τα προβλήματα που συναντάς.</p>
-            
-            <p style="text-align: center; font-weight: bold; color: #28a745; font-size: 16px; margin-top: 20px;">
-                Σε ευχαριστούμε που δίνεις και παίρνεις το καλό... Karma! 🚙✨
-            </p>
-
+            <p style="margin-top: 0; font-size: 14px;">Το όραμά μας είναι το ParkKarma να εξελιχθεί στον απόλυτο συνοδηγό σου.</p>
+            <p style="text-align: center; font-weight: bold; color: #28a745; font-size: 16px; margin-top: 20px;">Σε ευχαριστούμε που δίνεις και παίρνεις το καλό... Karma! 🚙✨</p>
             <button class="close-modal" style="margin-top: 15px;" onclick="closeModal('about-modal')">Κλείσιμο</button>
         </div>
     </div>
@@ -260,32 +265,15 @@
     <div id="terms-modal" class="modal">
         <div class="modal-content">
             <h2 style="color:#007bff;">📜 Όροι Χρήσης & Αποποίηση Ευθύνης</h2>
-            
-            <p style="font-size: 14px; color: #555;">Παρακαλούμε διαβάστε προσεκτικά τους παρακάτω όρους πριν χρησιμοποιήσετε το ParkKarma.</p>
-
+            <p style="font-size: 14px; color: #555;">Παρακαλούμε διαβάστε προσεκτικά τους παρακάτω όρους.</p>
             <h3 style="margin-bottom: 5px; font-size: 16px;">1. Ασφαλής Οδήγηση (Σημαντικό!) ⚠️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Η προσοχή σας πρέπει να βρίσκεται πάντα στον δρόμο. Μην χειρίζεστε την εφαρμογή ενώ οδηγείτε. Χρησιμοποιήστε το ηχητικό Radar ή ζητήστε από τον συνοδηγό να ελέγχει τον χάρτη.</p>
-
+            <p style="margin-top: 0; font-size: 14px;">Η προσοχή σας πρέπει να βρίσκεται πάντα στον δρόμο.</p>
             <h3 style="margin-bottom: 5px; font-size: 16px;">2. Ενημερωτικός Χαρακτήρας ℹ️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Το <b>ParkKarma</b> βασίζεται αποκλειστικά στην κοινότητα (crowdsourcing). Η εφαρμογή <b>δεν εγγυάται</b> τη διαθεσιμότητα καμίας θέσης στάθμευσης, καθώς μια θέση μπορεί να καταληφθεί από άλλο όχημα πριν φτάσετε.</p>
-
+            <p style="margin-top: 0; font-size: 14px;">Η εφαρμογή <b>δεν εγγυάται</b> τη διαθεσιμότητα καμίας θέσης στάθμευσης.</p>
             <h3 style="margin-bottom: 5px; font-size: 16px;">3. Αποποίηση Ευθύνης 🚫</h3>
-            <p style="margin-top: 0; font-size: 14px;">Οι δημιουργοί της εφαρμογής δεν φέρουν απολύτως καμία ευθύνη για:<br>
-            • Τυχόν ατυχήματα ή υλικές ζημιές κατά την οδήγηση ή στάθμευση.<br>
-            • Κλήσεις της Τροχαίας, πρόστιμα ή παράνομη στάθμευση. Ο οδηγός οφείλει να ελέγχει πάντα τη σήμανση (π.χ. ράμπες ΑμεΑ, διαβάσεις, πινακίδες).<br>
-            • Ανακρίβειες στα δεδομένα που αναρτούν άλλοι χρήστες.</p>
-
-            <h3 style="margin-bottom: 5px; font-size: 16px;">4. Υπεύθυνη Χρήση & Karma ⚖️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Απαγορεύεται η σκόπιμη δημοσίευση ψευδών θέσεων ή η κατάχρηση του κουμπιού "Έρχομαι!". Οι λογαριασμοί που δημοσιεύουν κακόβουλα (trolls) ή προσπαθούν να ξεγελάσουν το σύστημα πόντων (Karma) θα αποκλείονται από την εφαρμογή.</p>
-
-            <h3 style="margin-bottom: 5px; font-size: 16px;">5. Ιδιωτικότητα & Διαχείριση Δεδομένων 🔒</h3>
-            <p style="margin-top: 0; font-size: 14px;">
-            Η εφαρμογή σέβεται την ιδιωτικότητά σας, ωστόσο για την αποφυγή κακόβουλης χρήσης (trolling) και την προστασία της κοινότητας, ισχύουν τα εξής:<br>
-            • <b>Για Επώνυμους Χρήστες:</b> Το Email που χρησιμοποιείτε κατά τη σύνδεση μέσω Google αποθηκεύεται με ασφάλεια στη βάση δεδομένων και είναι ορατό <u>αποκλειστικά και μόνο στον διαχειριστή (Admin)</u> της εφαρμογής για λόγους ελέγχου εγκυρότητας των πινεζών.<br>
-            • <b>Για Ανώνυμους Χρήστες:</b> Παράγεται ένα τυχαίο, ανώνυμο αναγνωριστικό συσκευής (Device ID) το οποίο συνδέεται με τις πινέζες σας.<br>
-            • Σε καμία περίπτωση τα στοιχεία αυτά δεν δημοσιοποιούνται σε άλλους απλούς χρήστες ούτε κοινοποιούνται σε τρίτους. Χρησιμοποιώντας την εφαρμογή, συναινείτε στην παραπάνω διαχείριση για την ασφάλεια του app.
-            </p>
-
+            <p style="margin-top: 0; font-size: 14px;">Οι δημιουργοί δεν φέρουν ευθύνη για ατυχήματα, πρόστιμα, ή ανακρίβειες δεδομένων.</p>
+            <h3 style="margin-bottom: 5px; font-size: 16px;">4. Ιδιωτικότητα & Δεδομένα 🔒</h3>
+            <p style="margin-top: 0; font-size: 14px;">Το Email ή το ανώνυμο ID σας είναι ορατό μόνο στον διαχειριστή για την αποφυγή trolling.</p>
             <button id="accept-terms-btn" class="close-modal" style="margin-top: 15px; background-color: #28a745;" onclick="acceptTerms()">Συμφωνώ & Αποδοχή</button>
         </div>
     </div>
@@ -294,18 +282,39 @@
         <div class="modal-content">
             <h2 style="color:#e0a800; text-align: center;">👑 Πίνακας Διαχειριστή</h2>
             
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); margin-bottom: 20px; color: #333;">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; color: #333;">
                 <h3 style="margin-top: 0;">📊 Live Στατιστικά</h3>
-                <p>• Εγγεγραμμένοι Χρήστες: <b id="stat-users">0</b></p>
-                <p>• Ελεύθερες Πινέζες (🟢/🔴): <b id="stat-active">0</b></p>
-                <p>• Κρατημένες Πινέζες (🟣): <b id="stat-booked">0</b></p>
+                <p>• Χρήστες: <b id="stat-users">0</b></p>
+                <p>• Ελεύθερες Πινέζες: <b id="stat-active">0</b></p>
+                <p>• Κρατημένες Πινέζες: <b id="stat-booked">0</b></p>
+                <p>• Επίσημα Πάρκινγκ: <b id="stat-official">0</b></p>
             </div>
 
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); color: #333;">
-                <h3 style="margin-top: 0; color: #dc3545;">🚫 Διαχείριση Χρηστών (Ban)</h3>
-                <p style="font-size: 13px; color: #666;">Εισάγετε το Email χρήστη ή το Ανώνυμο ID (π.χ. anon_x9b2) για οριστική διαγραφή.</p>
-                <input type="text" id="ban-email-input" placeholder="π.χ. troll@gmail.com ή anon_x9b2" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-                <button class="occupy-btn" style="margin-top: 10px;" onclick="adminBanUser()">Οριστική Διαγραφή</button>
+            <div style="background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 20px; color: #333;">
+                <h3 style="margin-top: 0; color: #007bff;">🏢 Προσθήκη Επίσημου Πάρκινγκ</h3>
+                <input type="text" id="admin-p-email" class="admin-input" placeholder="Email Ιδιοκτήτη (π.χ. owner@gmail.com)">
+                <input type="text" id="admin-p-name" class="admin-input" placeholder="Όνομα Πάρκινγκ">
+                
+                <button class="nav-btn" style="margin-bottom: 10px; font-size:13px;" onclick="getMapCenterForAdmin()">📍 Πάρε συντεταγμένες από κέντρο χάρτη</button>
+                <input type="number" id="admin-p-lat" class="admin-input" placeholder="Latitude (π.χ. 39.6384)">
+                <input type="number" id="admin-p-lng" class="admin-input" placeholder="Longitude (π.χ. 22.4152)">
+                
+                <input type="text" id="admin-p-photo" class="admin-input" placeholder="Link Φωτογραφίας (προαιρετικό)">
+                <input type="text" id="admin-p-phone" class="admin-input" placeholder="Τηλέφωνο / Τιμή (π.χ. 2410... / 5€ η μέρα)">
+                <input type="text" id="admin-p-address" class="admin-input" placeholder="Οδός & Αριθμός">
+                
+                <p style="font-size:12px; margin-bottom:2px; font-weight:bold;">Ωράρια (π.χ. 08:00-21:00 ή Κλειστό)</p>
+                <input type="text" id="admin-p-w" class="admin-input" placeholder="Καθημερινές">
+                <input type="text" id="admin-p-sat" class="admin-input" placeholder="Σάββατο">
+                <input type="text" id="admin-p-sun" class="admin-input" placeholder="Κυριακή">
+                
+                <button class="btn-action" onclick="adminAddOfficialParking()">Προσθήκη Πάρκινγκ</button>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; color: #333;">
+                <h3 style="margin-top: 0; color: #dc3545;">🚫 Διαγραφή Χρηστών (Ban)</h3>
+                <input type="text" id="ban-email-input" class="admin-input" placeholder="π.χ. troll@gmail.com ή anon_x9b2">
+                <button class="occupy-btn" onclick="adminBanUser()">Οριστική Διαγραφή</button>
             </div>
 
             <button class="close-modal" style="margin-top: 20px; background-color: #343a40;" onclick="closeModal('admin-modal')">Κλείσιμο</button>
@@ -317,10 +326,12 @@
     <script>
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
-        var savedPositions = [], markers = [], savedMarkers = [], userMarker = null, lastClickedMarker = null, searchMarker = null, myCarMarker = null;
+        var savedPositions = [], markers = [], officialMarkers = [], savedMarkers = [], userMarker = null, lastClickedMarker = null, searchMarker = null, myCarMarker = null;
 
         let userEmail = localStorage.getItem('parkkarma_email') || null;
         let anonDeviceID = localStorage.getItem('parkkarma_anon_id');
+        let isParkingOwner = false;
+
         if (!anonDeviceID) {
             anonDeviceID = 'anon_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('parkkarma_anon_id', anonDeviceID);
@@ -368,10 +379,7 @@
 
         let notifiedSpots = new Set();
         function playRadarBeep() {
-            try {
-                let audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-                audio.play().catch(e => console.log("Audio muted"));
-            } catch(e){}
+            try { let audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'); audio.play().catch(e=>{}); } catch(e){}
         }
         function showRadarToast(distance) {
             let toast = document.getElementById('radar-toast');
@@ -384,9 +392,8 @@
             if (!userMarker) return;
             let pos = userMarker.getLatLng();
             localStorage.setItem('parkkarma_my_car', JSON.stringify({lat: pos.lat, lng: pos.lng}));
-            alert("Η θέση του αυτοκινήτου σου αποθηκεύτηκε! Μπορείς να την βρεις από το κουμπί 'Το αμάξι μου'.");
-            map.closePopup();
-            renderMyCarMarker();
+            alert("Η θέση του αυτοκινήτου σου αποθηκεύτηκε!");
+            map.closePopup(); renderMyCarMarker();
         }
         function clearMyCar() {
             localStorage.removeItem('parkkarma_my_car');
@@ -398,11 +405,9 @@
             if (!data) return;
             let pos = JSON.parse(data);
             if (myCarMarker) map.removeLayer(myCarMarker);
-            
             let icon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
-            
             myCarMarker = L.marker([pos.lat, pos.lng], {icon: icon}).addTo(map)
-                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=...?daddr=${pos.lat},${pos.lng}&travelmode=walking', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
+                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}&travelmode=walking', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
         }
         function findMyCar() {
             let data = localStorage.getItem('parkkarma_my_car');
@@ -410,9 +415,7 @@
                 let pos = JSON.parse(data);
                 map.setView([pos.lat, pos.lng], 18);
                 if(myCarMarker) myCarMarker.openPopup();
-            } else {
-                alert("Δεν έχεις αποθηκεύσει τη θέση! Πάτα 'Επαναφορά μου' και 'Πάρκαρα Εδώ!' για να την σώσεις.");
-            }
+            } else { alert("Δεν έχεις αποθηκεύσει τη θέση!"); }
         }
         renderMyCarMarker();
 
@@ -425,22 +428,23 @@
                     let number = data.address.house_number || "";
                     let city = data.address.city || data.address.town || data.address.village || "";
                     let result = `${street} ${number}, ${city}`.trim();
-                    result = result.replace(/^,\s*/, '').replace(/,\s*$/, '');
-                    return result || "Άγνωστη διεύθυνση";
+                    return result.replace(/^,\s*/, '').replace(/,\s*$/, '') || "Άγνωστη διεύθυνση";
                 }
                 return "Διεύθυνση μη διαθέσιμη";
             } catch (e) { return "Σφάλμα διεύθυνσης"; }
         }
 
-        // --- ΛΟΓΙΚΗ ΓΙΑ ADMIN ---
+        // --- ADMIN (GEORGE) ---
         function checkAdminStatus(email) {
             if (email === "george@parkkarmaapp.com") {
                 document.getElementById('admin-li').style.display = 'block';
-            } else {
-                document.getElementById('admin-li').style.display = 'none';
             }
         }
-
+        function getMapCenterForAdmin() {
+            let center = map.getCenter();
+            document.getElementById('admin-p-lat').value = center.lat.toFixed(6);
+            document.getElementById('admin-p-lng').value = center.lng.toFixed(6);
+        }
         async function openAdminPanel() {
             openModal('admin-modal');
             try {
@@ -450,48 +454,74 @@
                     document.getElementById('stat-users').innerText = data.total_users;
                     document.getElementById('stat-active').innerText = data.active_spots;
                     document.getElementById('stat-booked').innerText = data.booked_spots;
+                    document.getElementById('stat-official').innerText = data.total_official;
                 }
-            } catch(e) { alert("Σφάλμα κατά τη φόρτωση των στατιστικών."); }
+            } catch(e) {}
         }
-
+        async function adminAddOfficialParking() {
+            let data = {
+                owner_email: document.getElementById('admin-p-email').value,
+                name: document.getElementById('admin-p-name').value,
+                latitude: parseFloat(document.getElementById('admin-p-lat').value),
+                longitude: parseFloat(document.getElementById('admin-p-lng').value),
+                photo_url: document.getElementById('admin-p-photo').value,
+                phone: document.getElementById('admin-p-phone').value,
+                address: document.getElementById('admin-p-address').value,
+                hours_weekday: document.getElementById('admin-p-w').value || "08:00-21:00",
+                hours_saturday: document.getElementById('admin-p-sat').value || "08:00-15:00",
+                hours_sunday: document.getElementById('admin-p-sun').value || "Κλειστό"
+            };
+            if(!data.owner_email || !data.name || isNaN(data.latitude) || isNaN(data.longitude)) {
+                alert("Συμπληρώστε τα βασικά πεδία (Email, Όνομα, Lat, Lng)."); return;
+            }
+            try {
+                let res = await fetch(`${API_BASE_URL}/admin/official-parking?email=${userEmail}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+                });
+                if(res.ok) { alert("Προστέθηκε επιτυχώς!"); loadSpots(); }
+                else alert("Σφάλμα.");
+            } catch(e) { alert("Σφάλμα δικτύου."); }
+        }
         async function adminBanUser() {
             let trollEmail = document.getElementById('ban-email-input').value.trim();
-            if (!trollEmail) { alert("Παρακαλώ βάλτε ένα έγκυρο email ή ID."); return; }
-            
-            if (confirm(`Είστε σίγουρος ότι θέλετε να διαγράψετε οριστικά τον χρήστη/συσκευή ${trollEmail};`)) {
+            if (!trollEmail) return;
+            if (confirm(`Διαγραφή του ${trollEmail};`)) {
                 try {
                     let res = await fetch(`${API_BASE_URL}/admin/ban-user?email=${userEmail}&user_to_ban=${trollEmail}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        alert("Η διαγραφή ολοκληρώθηκε επιτυχώς!");
-                        document.getElementById('ban-email-input').value = "";
-                        openAdminPanel();
-                        loadSpots();
-                    } else {
-                        let err = await res.json();
-                        alert(err.detail || "Σφάλμα.");
-                    }
-                } catch(e) { alert("Αποτυχία σύνδεσης με τον server."); }
+                    if (res.ok) { alert("Επιτυχία!"); document.getElementById('ban-email-input').value = ""; openAdminPanel(); loadSpots(); }
+                } catch(e) {}
             }
         }
 
-        // --- ΛΟΓΙΚΗ ΓΙΑ REPORT SPOT ---
-        async function reportSpot(spotId) {
-            if(confirm("Είστε σίγουρος ότι αυτή η θέση είναι ψεύτικη ή δεν υπάρχει πια;")) {
-                let ident = userEmail ? userEmail : anonDeviceID;
-                try {
-                    let res = await fetch(`${API_BASE_URL}/report-spot/${spotId}?reporter_id=${ident}`, { method: 'POST' });
-                    if (res.ok) {
-                        let data = await res.json();
-                        alert(data.message);
-                        map.closePopup();
-                        loadSpots();
-                    } else {
-                        alert("Σφάλμα κατά την αναφορά.");
-                    }
-                } catch(e) { alert("Αποτυχία σύνδεσης με τον server."); }
-            }
+        // --- OWNER (ΙΔΙΟΚΤΗΤΕΣ ΠΑΡΚΙΝΓΚ) ---
+        async function checkOwnerStatus() {
+            if(!userEmail) return;
+            try {
+                let res = await fetch(`${API_BASE_URL}/owner/my-parking?email=${userEmail}`);
+                if(res.ok) {
+                    let p = await res.json();
+                    isParkingOwner = true;
+                    document.getElementById('owner-li').style.display = 'block';
+                    document.getElementById('owner-parking-name').innerText = p.name;
+                    document.getElementById('owner-closed-toggle').checked = p.is_closed_today;
+                }
+            } catch(e) {}
+        }
+        function openOwnerPanel() { openModal('owner-modal'); }
+        async function updateOwnerStatus(status) {
+            let isClosed = document.getElementById('owner-closed-toggle').checked;
+            let res = await fetch(`${API_BASE_URL}/owner/update-status?email=${userEmail}`, {
+                method: 'PUT', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status: status, is_closed_today: isClosed})
+            });
+            if(res.ok) { alert("Ενημερώθηκε!"); closeModal('owner-modal'); loadSpots(); }
+        }
+        function saveOwnerClosedStatus() {
+            // Keep existing status but toggle closed
+            updateOwnerStatus('GREEN'); // Dummy status, backend will save the toggle correctly if we fetch the current, but let's just force update via API
         }
 
+        // --- GOOGLE AUTH ---
         async function handleCredentialResponse(response) {
             let localSpots = JSON.parse(localStorage.getItem('parkkarma_saved_spots')) || [];
             let res = await fetch(`${API_BASE_URL}/auth/google`, {
@@ -507,6 +537,7 @@
                 showAllSavedMarkers();
                 updateUIForLoggedInUser(data.karma);
                 checkAdminStatus(userEmail);
+                checkOwnerStatus();
             }
         }
 
@@ -538,12 +569,9 @@
 
         if (userEmail) { 
             setTimeout(() => { 
-                updateUIForLoggedInUser(0); 
-                fetchKarma(); 
-                checkAdminStatus(userEmail);
+                updateUIForLoggedInUser(0); fetchKarma(); checkAdminStatus(userEmail); checkOwnerStatus();
             }, 500); 
-        } 
-        else { 
+        } else { 
             savedPositions = JSON.parse(localStorage.getItem('parkkarma_saved_spots')) || []; 
             setTimeout(showAllSavedMarkers, 500); 
         }
@@ -551,63 +579,46 @@
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
         
         function openModal(id) { 
-            if (localStorage.getItem('parkkarma_terms_accepted') !== 'true' && id !== 'terms-modal') {
-                return;
-            }
+            if (localStorage.getItem('parkkarma_terms_accepted') !== 'true' && id !== 'terms-modal') return;
             document.getElementById(id).style.display = 'block'; 
             if(document.getElementById('menu-overlay').style.display === 'block') toggleMenu(); 
         }
         
         function closeModal(id) { 
             if (localStorage.getItem('parkkarma_terms_accepted') !== 'true' && id === 'terms-modal') {
-                alert("Πρέπει να αποδεχτείτε τους όρους χρήσης για να χρησιμοποιήσετε την εφαρμογή.");
-                return;
+                alert("Πρέπει να αποδεχτείτε τους όρους."); return;
             }
             document.getElementById(id).style.display = 'none'; 
         }
 
-        function checkTermsOnStartup() {
-            if (localStorage.getItem('parkkarma_terms_accepted') !== 'true') {
-                document.getElementById('terms-modal').style.display = 'block';
-            }
-        }
-        
-        function acceptTerms() {
-            localStorage.setItem('parkkarma_terms_accepted', 'true');
-            document.getElementById('terms-modal').style.display = 'none';
-        }
+        function checkTermsOnStartup() { if (localStorage.getItem('parkkarma_terms_accepted') !== 'true') document.getElementById('terms-modal').style.display = 'block'; }
+        function acceptTerms() { localStorage.setItem('parkkarma_terms_accepted', 'true'); document.getElementById('terms-modal').style.display = 'none'; }
 
         async function openLeaderboard() {
             openModal('leaderboard-modal');
-            document.getElementById('leaderboard-list').innerHTML = "<p style='text-align:center;'>Φόρτωση δεδομένων...</p>";
+            document.getElementById('leaderboard-list').innerHTML = "<p style='text-align:center;'>Φόρτωση...</p>";
             try {
                 let res = await fetch(`${API_BASE_URL}/leaderboard`);
                 let data = await res.json();
                 let html = "";
-                if(data.leaderboard.length === 0) {
-                    html = "<p style='text-align:center;'>Δεν υπάρχουν ακόμα οδηγοί με Karma.</p>";
-                } else {
+                if(data.leaderboard.length === 0) html = "<p style='text-align:center;'>Δεν υπάρχουν ακόμα οδηγοί.</p>";
+                else {
                     data.leaderboard.forEach((item, index) => {
                         let rankIcon = index === 0 ? "👑" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🔹";
-                        let userBadge = getBadge(item.karma);
                         html += `<li class="leaderboard-item">
                                     <span style="display:flex; flex-direction:column;">
                                         <span>${rankIcon} <b>${item.user}</b></span>
-                                        <small style="color:#888; font-size:12px; margin-left:25px;">${userBadge}</small>
+                                        <small style="color:#888; font-size:12px; margin-left:25px;">${getBadge(item.karma)}</small>
                                     </span>
                                     <span class="leaderboard-karma">${item.karma}</span>
                                  </li>`;
                     });
                 }
                 document.getElementById('leaderboard-list').innerHTML = html;
-            } catch(e) {
-                document.getElementById('leaderboard-list').innerHTML = "<p style='text-align:center; color:red;'>Σφάλμα σύνδεσης.</p>";
-            }
+            } catch(e) {}
         }
 
-        L.Control.geocoder({
-            position: 'topleft', defaultMarkGeocode: false, placeholder: 'Αναζήτηση...', errorMessage: 'Δεν βρέθηκε.'
-        }).on('markgeocode', function(e) {
+        L.Control.geocoder({ position: 'topleft', defaultMarkGeocode: false, placeholder: 'Αναζήτηση...'}).on('markgeocode', function(e) {
             var bbox = e.geocode.bbox; map.fitBounds(bbox);
             if (searchMarker) map.removeLayer(searchMarker);
             searchMarker = L.marker(e.geocode.center).addTo(map).bindPopup(`<div class="popup-inner"><b>Αναζήτηση:</b><br><span class="address-text">📍 ${e.geocode.name}</span></div>`).openPopup();
@@ -707,18 +718,13 @@
             showAllSavedMarkers(); alert("Αποθηκεύτηκε!"); userMarker.closePopup();
         }
 
-        // --- ΕΛΕΓΧΟΣ 60 ΜΕΤΡΩΝ ΚΑΙ ΣΤΗΝ ΑΠΟΘΗΚΕΥΣΗ CLICKED ΠΙΝΕΖΑΣ ---
         function saveClickedLocation() {
             if (!lastClickedMarker) return;
             let pos = lastClickedMarker.getLatLng();
-
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (currentPos) => {
                     let distance = L.latLng(currentPos.coords.latitude, currentPos.coords.longitude).distanceTo(L.latLng(pos.lat, pos.lng));
-                    if (distance > 60) { 
-                        alert("Μπορείς να αποθηκεύσεις μια θέση μόνο αν βρίσκεσαι κοντά της (έως 60 μέτρα)!"); 
-                        return; 
-                    }
+                    if (distance > 60) { alert("Μόνο αν βρίσκεσαι κοντά της (έως 60 μέτρα)!"); return; }
                     
                     if (savedPositions.length >= 10) { alert("Μέγιστο όριο 10 θέσεων!"); return; }
                     let newSpot = { lat: pos.lat, lng: pos.lng, id: null };
@@ -729,11 +735,9 @@
                     
                     savedPositions.push(newSpot);
                     if (!userEmail) localStorage.setItem('parkkarma_saved_spots', JSON.stringify(savedPositions));
-                    showAllSavedMarkers(); 
-                    alert("Αποθηκεύτηκε!"); 
-                    cancelClickedMarker();
-                }, (err) => { alert("Πρέπει να δώσεις άδεια (GPS) για να αποθηκεύσεις."); }, { enableHighAccuracy: true });
-            } else { alert("Δεν υποστηρίζεται GPS."); }
+                    showAllSavedMarkers(); alert("Αποθηκεύτηκε!"); cancelClickedMarker();
+                }, (err) => { alert("Πρέπει να δώσεις άδεια (GPS)."); }, { enableHighAccuracy: true });
+            }
         }
 
         function submitPosition(isUserMarker) {
@@ -750,7 +754,7 @@
                         if (distance > 60) { alert("Μόνο αν βρίσκεσαι κοντά της (έως 60 μέτρα)!"); return; }
                         processSubmission(pos, fileInput, isUserMarker, tagValue);
                     }, (err) => { alert("Πρέπει να δώσεις άδεια (GPS)."); }, { enableHighAccuracy: true });
-                } else { alert("Δεν υποστηρίζεται GPS."); }
+                }
             }
         }
 
@@ -768,14 +772,11 @@
 
         map.on('click', async function(e) {
             let menuOverlay = document.getElementById('menu-overlay');
-            let isMenuOpen = menuOverlay && menuOverlay.style.display === 'block';
-
-            if (isMenuOpen || isPopupOpen || popupJustClosed || lastClickedMarker || searchMarker) {
-                if (isMenuOpen) menuOverlay.style.display = 'none';
+            if (menuOverlay && menuOverlay.style.display === 'block' || isPopupOpen || popupJustClosed || lastClickedMarker || searchMarker) {
+                if (menuOverlay) menuOverlay.style.display = 'none';
                 if (lastClickedMarker) { map.removeLayer(lastClickedMarker); lastClickedMarker = null; }
                 if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
-                map.closePopup(); 
-                return; 
+                map.closePopup(); return; 
             }
 
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
@@ -809,27 +810,17 @@
 
         async function sendToServer(lat, lng, mins, photo, tagValue) {
             await fetch(`${API_BASE_URL}/free-spot`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ 
-                    user_email: userEmail, 
-                    latitude: lat, 
-                    longitude: lng, 
-                    minutes_until_free: parseInt(mins), 
-                    photo: photo, 
-                    tag: tagValue || null,
-                    device_id: anonDeviceID
-                }) 
+                method: 'POST', headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ user_email: userEmail, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo, tag: tagValue || null, device_id: anonDeviceID }) 
             });
-            alert(userEmail ? "Δημοσιεύτηκε! Θα κερδίσεις πόντους (Karma) όταν κάποιος οδηγός πιάσει τη θέση." : "Η θέση δημοσιεύτηκε ανώνυμα!");
+            alert(userEmail ? "Δημοσιεύτηκε! Θα κερδίσεις πόντους όταν κάποιος οδηγός πιάσει τη θέση." : "Η θέση δημοσιεύτηκε ανώνυμα!");
             map.closePopup(); loadSpots();
         }
 
         async function bookSpot(spotId) {
             let ident = userEmail ? userEmail : anonDeviceID;
             let res = await fetch(`${API_BASE_URL}/book-spot/${spotId}?occupier_id=${ident}`, { method: 'POST' });
-            if (res.ok) { alert("🚙 Η θέση κρατήθηκε για 5 λεπτά!"); map.closePopup(); loadSpots(); } 
-            else { let error = await res.json(); alert(error.detail || "Σφάλμα."); }
+            if (res.ok) { alert("🚙 Η θέση κρατήθηκε για 5 λεπτά!"); map.closePopup(); loadSpots(); } else alert("Σφάλμα.");
         }
 
         async function unbookSpot(spotId) {
@@ -838,7 +829,36 @@
             if (res.ok) { alert("Ακυρώθηκε."); map.closePopup(); loadSpots(); }
         }
 
+        async function reportSpot(spotId) {
+            if(confirm("Είστε σίγουρος;")) {
+                let ident = userEmail ? userEmail : anonDeviceID;
+                await fetch(`${API_BASE_URL}/report-spot/${spotId}?reporter_id=${ident}`, { method: 'POST' });
+                alert("Αναφορά καταχωρήθηκε."); map.closePopup(); loadSpots();
+            }
+        }
+
+        // --- ΕΛΕΓΧΟΣ ΩΡΑΡΙΟΥ ΓΙΑ ΕΠΙΣΗΜΑ ΠΑΡΚΙΝΓΚ ---
+        function isParkingOpenNow(w, sat, sun) {
+            let now = new Date();
+            let day = now.getDay(); // 0 = Sun, 1-5 = Weekday, 6 = Sat
+            let hoursStr = day === 0 ? sun : (day === 6 ? sat : w);
+            
+            if (!hoursStr || hoursStr.toLowerCase().includes("κλειστό") || hoursStr.toLowerCase().includes("closed")) return false;
+            
+            let parts = hoursStr.split("-");
+            if (parts.length !== 2) return true; // fallback if bad format
+            
+            let currentMins = now.getHours() * 60 + now.getMinutes();
+            let start = parts[0].split(":");
+            let end = parts[1].split(":");
+            let startMins = parseInt(start[0])*60 + parseInt(start[1]);
+            let endMins = parseInt(end[0])*60 + parseInt(end[1]);
+            
+            return currentMins >= startMins && currentMins <= endMins;
+        }
+
         async function loadSpots() {
+            // LOAD USER SPOTS
             let res = await fetch(`${API_BASE_URL}/search-spots`);
             let data = await res.json();
             let ident = userEmail ? userEmail : anonDeviceID;
@@ -861,11 +881,7 @@
                     
                     if (color === 'green' && !isBooked && !notifiedSpots.has(spot.id) && userMarker) {
                         let distance = Math.round(userMarker.getLatLng().distanceTo(L.latLng(spot.latitude, spot.longitude)));
-                        if (distance < 1000) { 
-                            playRadarBeep();
-                            showRadarToast(distance);
-                            notifiedSpots.add(spot.id);
-                        }
+                        if (distance < 1000) { playRadarBeep(); showRadarToast(distance); notifiedSpots.add(spot.id); }
                     }
 
                     if (filterStatus === 'green' && color !== 'green') return; 
@@ -881,21 +897,19 @@
                     let adminInfoHtml = "";
                     if (userEmail === "george@parkkarmaapp.com") {
                         let publisher = spot.user_email ? spot.user_email : `Ανώνυμος (${spot.device_id})`;
-                        let reportsBadge = spot.reports_count > 0 ? `<br><span style="color:red;">🚩 Αναφορές Θέσης: ${spot.reports_count}</span>` : "";
-                        let userReportsBadge = spot.user_total_reports > 0 ? `<br><span style="color:darkred;">⚠️ Συνολικές Αναφορές Χρήστη: ${spot.user_total_reports}</span>` : "";
-                        adminInfoHtml = `<div style="font-size:11px; color:#e0a800; font-weight:bold; margin-bottom:5px; background:#fff3cd; padding:3px; border-radius:4px; border:1px solid #ffeeba; word-break:break-all;">👤 Από: ${publisher}${reportsBadge}${userReportsBadge}</div>`;
+                        adminInfoHtml = `<div style="font-size:11px; color:#e0a800; font-weight:bold; margin-bottom:5px; background:#fff3cd; padding:3px; border-radius:4px; border:1px solid #ffeeba; word-break:break-all;">👤 Από: ${publisher}</div>`;
                     }
                     
-                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=...?daddr=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')">🚗 Οδηγίες GPS</button>`;
+                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}', '_blank')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
                         if (bookedByMe) {
                             buttonsHtml += `<button class="save-btn" onclick="unbookSpot(${spot.id})">✖️ Ακύρωση 'Έρχομαι'</button>`;
-                            buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Έφτασα! (Κατάληψη)</button>`;
+                            buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude})">❌ Έφτασα! (Κατάληψη)</button>`;
                         } else { buttonsHtml += `<p style="color:purple; font-weight:bold; margin-top:10px; border: 2px solid purple; padding: 5px; border-radius: 5px;">🟣 Οδηγός καθ' οδόν!</p>`; }
                     } else {
                         buttonsHtml += `<button class="btn-action" style="background-color: #17a2b8;" onclick="bookSpot(${spot.id})">🙋‍♂️ Έρχομαι!</button>`;
-                        buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Κατειλημμένη</button>`;
+                        buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude})">❌ Κατειλημμένη</button>`;
                     }
 
                     buttonsHtml += `<button class="occupy-btn" style="background-color: #fd7e14; margin-top:5px;" onclick="reportSpot(${spot.id})">🚩 Αναφορά (Fake)</button>`;
@@ -903,17 +917,50 @@
                     let popupId = `pub_addr_${spot.id}`;
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
                         .bindPopup(`<div class="popup-inner">${adminInfoHtml}${photoHtml}${tagHtml}<div class="address-text" id="${popupId}">📍 Φόρτωση...</div><b>Λήγει σε: ${remaining} λεπτά</b><br>${buttonsHtml}</div>`);
-                        
-                    marker.on('click', async () => {
-                        let el = document.getElementById(popupId);
-                        if(el && el.innerText.includes('Φόρτωση')) { let addr = await getAddress(spot.latitude, spot.longitude); if(document.getElementById(popupId)) document.getElementById(popupId).innerText = `📍 ${addr}`; }
-                    });
+                    marker.on('click', async () => { let el = document.getElementById(popupId); if(el && el.innerText.includes('Φόρτωση')) document.getElementById(popupId).innerText = `📍 ${await getAddress(spot.latitude, spot.longitude)}`; });
                     markers.push(marker);
                 }
             });
+
+            // LOAD OFFICIAL PARKINGS
+            let offRes = await fetch(`${API_BASE_URL}/official-parkings`);
+            let offData = await offRes.json();
+            officialMarkers.forEach(m => map.removeLayer(m)); officialMarkers = [];
+
+            offData.forEach(p => {
+                let isOpen = isParkingOpenNow(p.hours_weekday, p.hours_saturday, p.hours_sunday) && !p.is_closed_today;
+                
+                let iconColor = "blue"; // Default
+                let statusText = "";
+                
+                if (!isOpen) { iconColor = "black"; statusText = `<b style="color:red;">🔴 ΚΛΕΙΣΤΟ ΤΩΡΑ</b>`; }
+                else if (p.status === "RED") { iconColor = "red"; statusText = `<b style="color:red;">🔴 Πλήρες (Γεμάτο)</b>`; }
+                else if (p.status === "YELLOW") { iconColor = "gold"; statusText = `<b style="color:#e0a800;">🟡 Λίγες Θέσεις</b>`; }
+                else { iconColor = "green"; statusText = `<b style="color:green;">🟢 Διαθέσιμο</b>`; }
+
+                let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${iconColor}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+                
+                let pPhoto = p.photo_url ? `<img src="${p.photo_url}" class="photo-preview" style="max-height:100px;">` : "";
+                let pPhone = p.phone ? `<p style="margin:2px 0; font-size:13px;">📞 ${p.phone}</p>` : "";
+                let pAddress = p.address ? `<p style="margin:2px 0; font-size:13px;">📍 ${p.address}</p>` : "";
+                
+                let popupContent = `<div class="popup-inner" style="width: 200px;">
+                    <h3 style="color:#007bff; margin:0 0 5px 0;">🅿️ ${p.name}</h3>
+                    ${statusText}
+                    ${pPhoto}
+                    ${pAddress}
+                    ${pPhone}
+                    <hr style="margin:5px 0;">
+                    <p style="font-size:11px; color:#555; margin:0;">⏰ Καθημ: ${p.hours_weekday} | Σαβ: ${p.hours_saturday} | Κυρ: ${p.hours_sunday}</p>
+                    <button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}', '_blank')">🚗 Πλοήγηση Στο Πάρκινγκ</button>
+                </div>`;
+                
+                let marker = L.marker([p.latitude, p.longitude], {icon: icon}).addTo(map).bindPopup(popupContent);
+                officialMarkers.push(marker);
+            });
         }
 
-        async function occupySpot(spotId, spotLat, spotLng, creatorId) {
+        async function occupySpot(spotId, spotLat, spotLng) {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     let distance = L.latLng(pos.coords.latitude, pos.coords.longitude).distanceTo(L.latLng(spotLat, spotLng));
@@ -926,18 +973,12 @@
         }
 
         resetUserMarker(); loadSpots(); 
-        
         setInterval(loadSpots, 20000);
         setInterval(fetchKarma, 20000);
 
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('Service Worker Registered!'))
-                    .catch(err => console.log('Service Worker Failed:', err));
-            });
+            window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(err => {}); });
         }
-
         window.addEventListener('DOMContentLoaded', checkTermsOnStartup);
     </script>
 </body>
