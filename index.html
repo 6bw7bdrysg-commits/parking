@@ -297,9 +297,9 @@
 
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1); color: #333;">
                 <h3 style="margin-top: 0; color: #dc3545;">🚫 Διαχείριση Χρηστών (Ban)</h3>
-                <p style="font-size: 13px; color: #666;">Εισάγετε το email του χρήστη (troll) για να τον διαγράψετε οριστικά από την εφαρμογή.</p>
-                <input type="email" id="ban-email-input" placeholder="π.χ. troll@gmail.com" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
-                <button class="occupy-btn" style="margin-top: 10px;" onclick="adminBanUser()">Οριστική Διαγραφή Χρήστη</button>
+                <p style="font-size: 13px; color: #666;">Εισάγετε το Email χρήστη ή το Ανώνυμο ID (π.χ. anon_x9b2) για οριστική διαγραφή.</p>
+                <input type="text" id="ban-email-input" placeholder="π.χ. troll@gmail.com ή anon_x9b2" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box;">
+                <button class="occupy-btn" style="margin-top: 10px;" onclick="adminBanUser()">Οριστική Διαγραφή</button>
             </div>
 
             <button class="close-modal" style="margin-top: 20px; background-color: #343a40;" onclick="closeModal('admin-modal')">Κλείσιμο</button>
@@ -450,15 +450,16 @@
 
         async function adminBanUser() {
             let trollEmail = document.getElementById('ban-email-input').value.trim();
-            if (!trollEmail) { alert("Παρακαλώ βάλτε ένα έγκυρο email."); return; }
+            if (!trollEmail) { alert("Παρακαλώ βάλτε ένα έγκυρο email ή ID."); return; }
             
-            if (confirm(`Είστε σίγουρος ότι θέλετε να διαγράψετε οριστικά τον χρήστη ${trollEmail};`)) {
+            if (confirm(`Είστε σίγουρος ότι θέλετε να διαγράψετε οριστικά τον χρήστη/συσκευή ${trollEmail};`)) {
                 try {
                     let res = await fetch(`${API_BASE_URL}/admin/ban-user?email=${userEmail}&user_to_ban=${trollEmail}`, { method: 'DELETE' });
                     if (res.ok) {
-                        alert("Ο χρήστης διαγράφηκε επιτυχώς!");
+                        alert("Η διαγραφή ολοκληρώθηκε επιτυχώς!");
                         document.getElementById('ban-email-input').value = "";
-                        openAdminPanel(); // Ανανέωση στατιστικών
+                        openAdminPanel();
+                        loadSpots();
                     } else {
                         let err = await res.json();
                         alert(err.detail || "Σφάλμα.");
@@ -749,7 +750,19 @@
         function cancelClickedMarker() { if (lastClickedMarker) map.removeLayer(lastClickedMarker); lastClickedMarker = null; map.closePopup(); }
 
         async function sendToServer(lat, lng, mins, photo, tagValue) {
-            await fetch(`${API_BASE_URL}/free-spot`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_email: userEmail, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo, tag: tagValue || null }) });
+            await fetch(`${API_BASE_URL}/free-spot`, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ 
+                    user_email: userEmail, 
+                    latitude: lat, 
+                    longitude: lng, 
+                    minutes_until_free: parseInt(mins), 
+                    photo: photo, 
+                    tag: tagValue || null,
+                    device_id: anonDeviceID  // Πάντα στέλνουμε το Device ID (χρήσιμο για ανώνυμους)
+                }) 
+            });
             alert(userEmail ? "Δημοσιεύτηκε! Θα κερδίσεις Karma!" : "Δημοσιεύτηκε ανώνυμα!");
             map.closePopup(); loadSpots();
         }
@@ -807,6 +820,13 @@
                     let photoHtml = spot.photo ? `<img src="${spot.photo}" class="photo-preview"><br>` : "";
                     let tagHtml = spot.tag ? `<div class="spot-tag">${spot.tag}</div><br>` : "";
                     
+                    // --- ΕΛΕΓΧΟΣ ADMIN ΓΙΑ ΕΜΦΑΝΙΣΗ EMAIL / DEVICE ID ---
+                    let adminInfoHtml = "";
+                    if (userEmail === "george@parkkarmaapp.com") {
+                        let publisher = spot.user_email ? spot.user_email : `Ανώνυμος (${spot.device_id})`;
+                        adminInfoHtml = `<div style="font-size:11px; color:#e0a800; font-weight:bold; margin-bottom:5px; background:#fff3cd; padding:3px; border-radius:4px; border:1px solid #ffeeba; word-break:break-all;">👤 Από: ${publisher}</div>`;
+                    }
+                    
                     let buttonsHtml = `<button class="nav-btn" onclick="window.open('http://googleusercontent.com/maps.google.com/maps?daddr=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
@@ -821,7 +841,7 @@
                     
                     let popupId = `pub_addr_${spot.id}`;
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
-                        .bindPopup(`<div class="popup-inner">${photoHtml}${tagHtml}<div class="address-text" id="${popupId}">📍 Φόρτωση...</div><b>Λήγει σε: ${remaining} λεπτά</b><br>${buttonsHtml}</div>`);
+                        .bindPopup(`<div class="popup-inner">${adminInfoHtml}${photoHtml}${tagHtml}<div class="address-text" id="${popupId}">📍 Φόρτωση...</div><b>Λήγει σε: ${remaining} λεπτά</b><br>${buttonsHtml}</div>`);
                         
                     marker.on('click', async () => {
                         let el = document.getElementById(popupId);
@@ -846,7 +866,6 @@
 
         resetUserMarker(); loadSpots(); 
         
-        // --- ΑΥΞΗΣΗ ΤΟΥ ΧΡΟΝΟΥ ΓΙΑ ΑΝΤΟΧΗ ΣΤΟΝ FREE SERVER (20 δευτερόλεπτα) ---
         setInterval(loadSpots, 20000);
         setInterval(fetchKarma, 20000);
 
