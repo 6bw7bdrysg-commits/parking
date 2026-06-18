@@ -173,7 +173,7 @@
         <ul style="list-style: none; padding: 0;">
             <li id="logout-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; color: red; font-weight: bold;" onclick="handleLogout()">🚪 Αποσύνδεση</li>
             <li onclick="toggleTheme()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold;">🌞/🌙 Σκοτεινό Θέμα</li>
-            <li onclick="window.open('https://forms.gle/ΒΑΛΕ_ΤΟ_LINK_ΣΟΥ_ΕΔΩ', '_blank')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold; color: #17a2b8;">📝 Αναφορά Προβλήματος / Ιδέες</li>
+            <li onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSdzXc1Wd7tzhm5Nh--3amQbS9rofAzOZNsDLwofPGu6lPESww/viewform?usp=dialog', '_blank')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold; color: #17a2b8;">📝 Αναφορά Προβλήματος / Ιδέες</li>
             <li onclick="openLeaderboard()" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; font-weight: bold;">🏆 Top Οδηγοί (Leaderboard)</li>
             <li id="admin-li" style="display:none; padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer; color: #e0a800; font-weight: bold;" onclick="openAdminPanel()">👑 Διαχείριση (Admin)</li>
             <li onclick="openModal('instructions-modal')" style="padding:15px 0; border-bottom:1px solid #ccc; cursor:pointer;">ℹ️ Οδηγίες Χρήσης</li>
@@ -205,7 +205,7 @@
             </p>
 
             <h3 style="margin-bottom: 5px;">2. Κάνε κράτηση (Έρχομαι!) 🙋‍♂️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" για σένα για 5 λεπτά, ώστε οι άλλοι να μην κατευθυνθούν εκεί.</p>
+            <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" for σένα για 5 λεπτά, ώστε οι άλλοι να μην κατευθυνθούν εκεί.</p>
 
             <h3 style="margin-bottom: 5px;">3. Radar Θέσεων 📡</h3>
             <p style="margin-top: 0; font-size: 14px;">Αν αδειάσει θέση σε ακτίνα 1χλμ, ακούς "Μπιπ!" (Θυμήσου να πατήσεις μια φορά τον χάρτη όταν μπαίνεις για να επιτρέψεις τον ήχο).</p>
@@ -238,9 +238,9 @@
         <div class="modal-content">
             <h2 style="color:#007bff;">👥 Σχετικά με εμάς</h2>
             
-            <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις ατέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
+            <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις аτέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
             
-            <p>Σκεφτήκαμε το εξής απλό: Γιατί να ψάχνουμε στα τυφλά, όταν μπορούμε να γίνουμε όλοι μαζί ένας «ζωντανός χάρτης»; Όταν φεύγει ένας, μπορεί να έρθει απευθείας ο επόμενος. Χωρίς άγχος, χωρίς χαμένη βενζίνη.</p>
+            <p>Σκεφτήκαμε το εξής απλό: Γιατί να ψάχνουμε στα τυφλά, όταν μπορούμε να γίνουμε όλοι μαζί ένας «ζωντανός χάρτης»; Όταν φεύγει ένας, μπορεί να έρθει απευθείας ο επόμενος. Χαιρόμαστε χωρίς άγχος, χωρίς χαμένη βενζίνη.</p>
             
             <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin: 15px 0; color: #333;">
                 <p style="margin: 0;">Σκοπός μας δεν είναι απλώς να φτιάξουμε άλλη μια εφαρμογή, αλλά μια <b>κοινότητα αλληλεγγύης</b>. Να μοιραζόμαστε τον χώρο και να κάνουμε την πόλη μας πιο φιλική και την καθημερινότητά μας πιο εύκολη.</p>
@@ -563,7 +563,7 @@
                 alert("Πρέπει να αποδεχτείτε τους όρους χρήσης για να χρησιμοποιήσετε την εφαρμογή.");
                 return;
             }
-            document.getElementById(id).style.display = 'none'; 
+            document.getElementById(id).style.none; 
         }
 
         function checkTermsOnStartup() {
