@@ -53,6 +53,14 @@ class SpotReport(Base):
     spot_id = Column(Integer, index=True)
     reporter_id = Column(String)
 
+# Νέος πίνακας για καταγραφή και όριο ημερήσιου Karma (Max 40/μέρα)
+class KarmaTransaction(Base):
+    __tablename__ = "karma_transactions"
+    id = Column(Integer, primary_key=True, index=True)
+    user_email = Column(String, index=True)
+    amount = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ParkKarma API")
@@ -151,12 +159,6 @@ async def create_free_spot(spot: SpotCreate, db: Session = Depends(get_db)):
         created_at=datetime.utcnow()
     )
     db.add(new_spot)
-    
-    if spot.user_email:
-        user = db.query(User).filter(User.email == spot.user_email).first()
-        if user:
-            user.karma += 10
-    
     db.commit()
     db.refresh(new_spot)
     return {"message": "Η θέση δημοσιεύτηκε επιτυχώς", "spot_id": new_spot.id}
@@ -178,10 +180,8 @@ async def search_spots(db: Session = Depends(get_db)):
 
     spots_list = []
     for s in active_spots:
-        # Αναφορές για αυτή τη συγκεκριμένη θέση
         reports_count = db.query(SpotReport).filter(SpotReport.spot_id == s.id).count()
         
-        # Υπολογισμός συνολικών αναφορών του χρήστη/συσκευής για να το βλέπει ο Admin
         if s.user_email:
             user_spots = db.query(ParkingSpot.id).filter(ParkingSpot.user_email == s.user_email).all()
         else:
@@ -252,6 +252,21 @@ async def occupy_spot(spot_id: int, occupier_email: str, db: Session = Depends(g
     if not spot:
         raise HTTPException(status_code=404, detail="Δεν βρέθηκε η θέση")
         
+    # LOGIC KARMA: +10 μόνο αν άλλος πάτησε κατάληψη & Όριο 40 πόντων ανά ημέρα
+    if spot.user_email and spot.user_email != occupier_email:
+        creator = db.query(User).filter(User.email == spot.user_email).first()
+        if creator:
+            today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            daily_earned = db.query(KarmaTransaction).filter(
+                KarmaTransaction.user_email == creator.email,
+                KarmaTransaction.created_at >= today_start
+            ).count() * 10
+            
+            if daily_earned < 40:
+                creator.karma += 10
+                new_tx = KarmaTransaction(user_email=creator.email, amount=10, created_at=datetime.utcnow())
+                db.add(new_tx)
+                
     db.delete(spot)
     db.commit()
     return {"message": "Η θέση καταλήφθηκε επιτυχώς"}
@@ -303,6 +318,7 @@ async def admin_ban_user(email: str, user_to_ban: str, db: Session = Depends(get
             raise HTTPException(status_code=404, detail="Ο χρήστης δεν βρέθηκε.")
         db.query(SavedLocation).filter(SavedLocation.user_email == user_to_ban).delete()
         db.query(ParkingSpot).filter(ParkingSpot.user_email == user_to_ban).delete()
+        db.query(KarmaTransaction).filter(KarmaTransaction.user_email == user_to_ban).delete()
         db.delete(user)
         db.commit()
         return {"message": f"Ο χρήστης {user_to_ban} διαγράφηκε επιτυχώς."}
