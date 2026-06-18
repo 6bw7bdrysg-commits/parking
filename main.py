@@ -7,7 +7,6 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
-from sqlalchemy.orm import relationship
 import jwt
 
 # Ρύθμιση Βάσης Δεδομένων
@@ -53,13 +52,29 @@ class SpotReport(Base):
     spot_id = Column(Integer, index=True)
     reporter_id = Column(String)
 
-# Νέος πίνακας για καταγραφή και όριο ημερήσιου Karma (Max 40/μέρα)
 class KarmaTransaction(Base):
     __tablename__ = "karma_transactions"
     id = Column(Integer, primary_key=True, index=True)
     user_email = Column(String, index=True)
     amount = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+# Νέος πίνακας για τα Επίσημα Ιδιωτικά Πάρκινγκ
+class OfficialParking(Base):
+    __tablename__ = "official_parkings"
+    id = Column(Integer, primary_key=True, index=True)
+    owner_email = Column(String, index=True)
+    name = Column(String)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    photo_url = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    hours_weekday = Column(String, default="08:00-21:00")
+    hours_saturday = Column(String, default="08:00-15:00")
+    hours_sunday = Column(String, default="Κλειστό")
+    status = Column(String, default="GREEN") # GREEN, YELLOW, RED
+    is_closed_today = Column(Boolean, default=False)
 
 Base.metadata.create_all(bind=engine)
 
@@ -99,10 +114,26 @@ class SavedLocationCreate(BaseModel):
     latitude: float
     longitude: float
 
+class OfficialParkingCreate(BaseModel):
+    owner_email: str
+    name: str
+    latitude: float
+    longitude: float
+    photo_url: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    hours_weekday: str
+    hours_saturday: str
+    hours_sunday: str
+
+class OfficialParkingStatusUpdate(BaseModel):
+    status: str
+    is_closed_today: bool
+
 # --- ADMIN EMAIL ---
 ADMIN_EMAIL = "george@parkkarmaapp.com"
 
-# --- ENDPOINTS ---
+# --- ENDPOINTS ΓΙΑ ΑΠΛΟΥΣ ΧΡΗΣΤΕΣ ---
 
 @app.post("/auth/google")
 async def auth_google(request: AuthRequest, db: Session = Depends(get_db)):
@@ -287,7 +318,55 @@ async def delete_saved_location(db_id: int, db: Session = Depends(get_db)):
         db.commit()
     return {"message": "Διαγράφηκε"}
 
+
+# --- ΕΠΙΣΗΜΑ ΠΑΡΚΙΝΓΚ (B2B) ---
+
+@app.get("/official-parkings")
+async def get_official_parkings(db: Session = Depends(get_db)):
+    return db.query(OfficialParking).all()
+
+@app.post("/admin/official-parking")
+async def add_official_parking(parking: OfficialParkingCreate, email: str = Query(...), db: Session = Depends(get_db)):
+    if email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Δεν έχετε δικαιώματα διαχειριστή.")
+    
+    new_parking = OfficialParking(
+        owner_email=parking.owner_email,
+        name=parking.name,
+        latitude=parking.latitude,
+        longitude=parking.longitude,
+        photo_url=parking.photo_url,
+        phone=parking.phone,
+        address=parking.address,
+        hours_weekday=parking.hours_weekday,
+        hours_saturday=parking.hours_saturday,
+        hours_sunday=parking.hours_sunday
+    )
+    db.add(new_parking)
+    db.commit()
+    return {"message": "Το Πάρκινγκ προστέθηκε επιτυχώς!"}
+
+@app.get("/owner/my-parking")
+async def get_my_parking(email: str, db: Session = Depends(get_db)):
+    parking = db.query(OfficialParking).filter(OfficialParking.owner_email == email).first()
+    if not parking:
+        raise HTTPException(status_code=404, detail="Δεν βρέθηκε πάρκινγκ.")
+    return parking
+
+@app.put("/owner/update-status")
+async def update_parking_status(email: str, update_data: OfficialParkingStatusUpdate, db: Session = Depends(get_db)):
+    parking = db.query(OfficialParking).filter(OfficialParking.owner_email == email).first()
+    if not parking:
+        raise HTTPException(status_code=404, detail="Δεν βρέθηκε πάρκινγκ.")
+    
+    parking.status = update_data.status
+    parking.is_closed_today = update_data.is_closed_today
+    db.commit()
+    return {"message": "Η κατάσταση ενημερώθηκε επιτυχώς!"}
+
+
 # --- ADMIN ENDPOINTS ---
+
 @app.get("/admin/stats")
 async def get_admin_stats(email: str, db: Session = Depends(get_db)):
     if email != ADMIN_EMAIL:
@@ -296,11 +375,13 @@ async def get_admin_stats(email: str, db: Session = Depends(get_db)):
     total_users = db.query(User).count()
     active_spots = db.query(ParkingSpot).filter(ParkingSpot.is_booked == False).count()
     booked_spots = db.query(ParkingSpot).filter(ParkingSpot.is_booked == True).count()
+    total_official = db.query(OfficialParking).count()
     
     return {
         "total_users": total_users,
         "active_spots": active_spots,
-        "booked_spots": booked_spots
+        "booked_spots": booked_spots,
+        "total_official": total_official
     }
 
 @app.delete("/admin/ban-user")
