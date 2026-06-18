@@ -704,6 +704,35 @@
             showAllSavedMarkers(); alert("Αποθηκεύτηκε!"); userMarker.closePopup();
         }
 
+        // --- ΕΛΕΓΧΟΣ 60 ΜΕΤΡΩΝ ΚΑΙ ΣΤΗΝ ΑΠΟΘΗΚΕΥΣΗ CLICKED ΠΙΝΕΖΑΣ ---
+        function saveClickedLocation() {
+            if (!lastClickedMarker) return;
+            let pos = lastClickedMarker.getLatLng();
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (currentPos) => {
+                    let distance = L.latLng(currentPos.coords.latitude, currentPos.coords.longitude).distanceTo(L.latLng(pos.lat, pos.lng));
+                    if (distance > 60) { 
+                        alert("Μπορείς να αποθηκεύσεις μια θέση μόνο αν βρίσκεσαι κοντά της (έως 60 μέτρα)!"); 
+                        return; 
+                    }
+                    
+                    if (savedPositions.length >= 10) { alert("Μέγιστο όριο 10 θέσεων!"); return; }
+                    let newSpot = { lat: pos.lat, lng: pos.lng, id: null };
+                    if (userEmail) {
+                        let res = await fetch(`${API_BASE_URL}/save-location`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: userEmail, latitude: pos.lat, longitude: pos.lng }) });
+                        if (res.ok) { let data = await res.json(); newSpot.id = data.id; }
+                    } else { newSpot.id = Date.now(); }
+                    
+                    savedPositions.push(newSpot);
+                    if (!userEmail) localStorage.setItem('parkkarma_saved_spots', JSON.stringify(savedPositions));
+                    showAllSavedMarkers(); 
+                    alert("Αποθηκεύτηκε!"); 
+                    cancelClickedMarker();
+                }, (err) => { alert("Πρέπει να δώσεις άδεια (GPS) για να αποθηκεύσεις."); }, { enableHighAccuracy: true });
+            } else { alert("Δεν υποστηρίζεται GPS."); }
+        }
+
         function submitPosition(isUserMarker) {
             let pos, fileInput, tagValue;
             if (isUserMarker) { 
