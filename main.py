@@ -47,6 +47,12 @@ class ParkingSpot(Base):
     device_id = Column(String, nullable=True)
     user_email = Column(String, nullable=True)
 
+class SpotReport(Base):
+    __tablename__ = "spot_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    spot_id = Column(Integer, index=True)
+    reporter_id = Column(String)
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ParkKarma API")
@@ -164,6 +170,7 @@ async def search_spots(db: Session = Depends(get_db)):
     for spot in all_spots:
         time_passed = (now - spot.created_at).total_seconds() / 60
         if time_passed > spot.minutes_until_free:
+            db.query(SpotReport).filter(SpotReport.spot_id == spot.id).delete() 
             db.delete(spot)
         else:
             active_spots.append(spot)
@@ -171,6 +178,18 @@ async def search_spots(db: Session = Depends(get_db)):
 
     spots_list = []
     for s in active_spots:
+        # Αναφορές για αυτή τη συγκεκριμένη θέση
+        reports_count = db.query(SpotReport).filter(SpotReport.spot_id == s.id).count()
+        
+        # Υπολογισμός συνολικών αναφορών του χρήστη/συσκευής για να το βλέπει ο Admin
+        if s.user_email:
+            user_spots = db.query(ParkingSpot.id).filter(ParkingSpot.user_email == s.user_email).all()
+        else:
+            user_spots = db.query(ParkingSpot.id).filter(ParkingSpot.device_id == s.device_id).all()
+            
+        spot_ids = [us.id for us in user_spots]
+        user_total_reports = db.query(SpotReport).filter(SpotReport.spot_id.in_(spot_ids)).count() if spot_ids else 0
+
         spots_list.append({
             "id": s.id,
             "latitude": s.latitude,
@@ -182,9 +201,27 @@ async def search_spots(db: Session = Depends(get_db)):
             "is_booked": s.is_booked,
             "booked_by": s.booked_by,
             "device_id": s.device_id,
-            "user_email": s.user_email  # Προσθήκη για τον Admin
+            "user_email": s.user_email,
+            "reports_count": reports_count,
+            "user_total_reports": user_total_reports
         })
     return {"spots": spots_list}
+
+@app.post("/report-spot/{spot_id}")
+async def report_spot(spot_id: int, reporter_id: str, db: Session = Depends(get_db)):
+    spot = db.query(ParkingSpot).filter(ParkingSpot.id == spot_id).first()
+    if not spot:
+        raise HTTPException(status_code=404, detail="Δεν βρέθηκε η θέση.")
+        
+    existing_report = db.query(SpotReport).filter(SpotReport.spot_id == spot_id, SpotReport.reporter_id == reporter_id).first()
+    if existing_report:
+        return {"message": "Έχεις ήδη αναφέρει αυτή τη θέση."}
+        
+    new_report = SpotReport(spot_id=spot_id, reporter_id=reporter_id)
+    db.add(new_report)
+    db.commit()
+    
+    return {"message": "Η αναφορά καταχωρήθηκε επιτυχώς! Ο διαχειριστής θα την ελέγξει σύντομα."}
 
 @app.post("/book-spot/{spot_id}")
 async def book_spot(spot_id: int, occupier_id: str, db: Session = Depends(get_db)):
@@ -256,14 +293,11 @@ async def admin_ban_user(email: str, user_to_ban: str, db: Session = Depends(get
     if email != ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Δεν έχετε δικαιώματα διαχειριστή.")
         
-    # Έλεγχος αν πρόκειται για Email ή για Ανώνυμο Device ID
     if "anon_" in user_to_ban:
-        # Ανώνυμος: Διαγράφουμε απλά όλες τις πινέζες αυτού του Device ID
         db.query(ParkingSpot).filter(ParkingSpot.device_id == user_to_ban).delete()
         db.commit()
         return {"message": f"Οι θέσεις της ανώνυμης συσκευής {user_to_ban} διαγράφηκαν."}
     else:
-        # Επώνυμος Χρήστης: Πλήρης διαγραφή
         user = db.query(User).filter(User.email == user_to_ban).first()
         if not user:
             raise HTTPException(status_code=404, detail="Ο χρήστης δεν βρέθηκε.")
