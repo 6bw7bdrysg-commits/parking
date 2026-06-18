@@ -85,7 +85,13 @@
         .save-btn { background-color: #ffc107; color: black; }
         .car-btn { background-color: #343a40; }
         .close-modal { background-color: #007bff; }
+        
+        /* Φωτογραφίες - Carousel / Slider */
         .photo-preview { max-width: 100%; display: block; margin: 5px auto; border-radius: 5px; }
+        .carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 5px; margin-bottom: 8px; border-radius: 5px; }
+        .carousel img { flex: 0 0 100%; max-width: 100%; height: 130px; object-fit: cover; scroll-snap-align: center; border-radius: 5px; border: 1px solid #ccc; }
+        .carousel::-webkit-scrollbar { height: 6px; }
+        .carousel::-webkit-scrollbar-thumb { background: #007bff; border-radius: 3px; }
         
         .address-text { color: #555; font-size: 13px; margin: 5px 0; font-weight: normal; }
         .spot-tag { background: #e9ecef; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 13px; display: inline-block; margin-bottom: 5px; border: 1px solid #ccc; font-weight: bold; }
@@ -118,6 +124,9 @@
 
         /* MODAL ΓΙΑ PARKING ADMIN */
         .admin-input { width: 100%; padding: 8px; margin: 5px 0 15px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;}
+
+        /* ΕΙΔΙΚΗ ΠΙΝΕΖΑ ΠΑΡΚΙΝΓΚ (RED) */
+        .custom-p-icon { background:transparent; border:none; }
 
         /* RESPONSIVE CSS ΓΙΑ ΚΙΝΗΤΑ */
         @media (max-width: 600px) {
@@ -231,7 +240,7 @@
             • <b>🟢 Πράσινο:</b> Η θέση είναι ελεύθερη – πρόλαβέ την!<br>
             • <b>🔴 Κόκκινο:</b> Ο οδηγός φεύγει σε λιγότερο από 3 λεπτά.<br>
             • <b>🟣 Μοβ:</b> Κάποιος έχει πατήσει "Έρχομαι!". Ψάξε για άλλη!<br>
-            • <b>🔵 Μπλε (Επίσημα Πάρκινγκ):</b> Ιδιωτικά συνεργαζόμενα πάρκινγκ. Δες live πόσες θέσεις έχουν και πόσο κοστίζουν.
+            • <b>🔴 Πάρκινγκ με "P":</b> Ιδιωτικά συνεργαζόμενα πάρκινγκ. Δες live διαθεσιμότητα και φωτογραφίες.
             </p>
             <h3 style="margin-bottom: 5px;">2. Κάνε κράτηση (Έρχομαι!) 🙋‍♂️</h3>
             <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" για σένα για 5 λεπτά.</p>
@@ -295,20 +304,29 @@
                 <input type="text" id="admin-p-email" class="admin-input" placeholder="Email Ιδιοκτήτη (π.χ. owner@gmail.com)">
                 <input type="text" id="admin-p-name" class="admin-input" placeholder="Όνομα Πάρκινγκ">
                 
-                <button class="nav-btn" style="margin-bottom: 10px; font-size:13px;" onclick="getMapCenterForAdmin()">📍 Πάρε συντεταγμένες από κέντρο χάρτη</button>
-                <input type="number" id="admin-p-lat" class="admin-input" placeholder="Latitude (π.χ. 39.6384)">
-                <input type="number" id="admin-p-lng" class="admin-input" placeholder="Longitude (π.χ. 22.4152)">
+                <div style="background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-bottom:15px;">
+                    <p style="font-size:12px; font-weight:bold; margin-top:0;">📍 Εύρεση Τοποθεσίας</p>
+                    <input type="text" id="admin-map-search" class="admin-input" style="margin-bottom:5px;" placeholder="Γράψε Διεύθυνση (π.χ. Αθηνάς 10, Λάρισα)">
+                    <button class="nav-btn" style="margin-top:0; font-size:13px;" onclick="startAdminMapDrag()">🔍 Βρες & Βάλε Πινέζα στον Χάρτη</button>
+                    
+                    <div style="display:flex; gap:5px; margin-top:10px;">
+                        <input type="text" id="admin-p-lat" class="admin-input" style="margin:0;" placeholder="Latitude" readonly>
+                        <input type="text" id="admin-p-lng" class="admin-input" style="margin:0;" placeholder="Longitude" readonly>
+                    </div>
+                </div>
                 
-                <input type="text" id="admin-p-photo" class="admin-input" placeholder="Link Φωτογραφίας (προαιρετικό)">
+                <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">📸 Φωτογραφίες (Έως 5, Slider)</p>
+                <input type="file" id="admin-p-photos" class="admin-input" accept="image/*" multiple>
+
                 <input type="text" id="admin-p-phone" class="admin-input" placeholder="Τηλέφωνο / Τιμή (π.χ. 2410... / 5€ η μέρα)">
                 <input type="text" id="admin-p-address" class="admin-input" placeholder="Οδός & Αριθμός">
                 
-                <p style="font-size:12px; margin-bottom:2px; font-weight:bold;">Ωράρια (π.χ. 08:00-21:00 ή Κλειστό)</p>
+                <p style="font-size:12px; margin-bottom:2px; font-weight:bold;">⏰ Ωράρια (π.χ. 08:00-21:00 ή Κλειστό)</p>
                 <input type="text" id="admin-p-w" class="admin-input" placeholder="Καθημερινές">
                 <input type="text" id="admin-p-sat" class="admin-input" placeholder="Σάββατο">
                 <input type="text" id="admin-p-sun" class="admin-input" placeholder="Κυριακή">
                 
-                <button class="btn-action" onclick="adminAddOfficialParking()">Προσθήκη Πάρκινγκ</button>
+                <button class="btn-action" onclick="adminAddOfficialParking()">✅ Καταχώρηση Πάρκινγκ</button>
             </div>
 
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; color: #333;">
@@ -320,6 +338,8 @@
             <button class="close-modal" style="margin-top: 20px; background-color: #343a40;" onclick="closeModal('admin-modal')">Κλείσιμο</button>
         </div>
     </div>
+
+    <button id="admin-confirm-btn" style="display:none; position:fixed; bottom:30px; left:50%; transform:translateX(-50%); z-index:5000; background:#28a745; color:white; padding:15px 25px; border-radius:30px; font-weight:bold; border:none; box-shadow:0 4px 10px rgba(0,0,0,0.5); font-size:16px;" onclick="confirmAdminMarker()">✅ Ολοκλήρωση Τοποθεσίας</button>
 
     <div id="map"></div>
     
@@ -392,7 +412,7 @@
             if (!userMarker) return;
             let pos = userMarker.getLatLng();
             localStorage.setItem('parkkarma_my_car', JSON.stringify({lat: pos.lat, lng: pos.lng}));
-            alert("Η θέση του αυτοκινήτου σου αποθηκεύτηκε!");
+            alert("Η θέση του αυτοκινήτου σου αποθηκεύτηκε! Μπορείς να την βρεις από το κουμπί 'Το αμάξι μου'.");
             map.closePopup(); renderMyCarMarker();
         }
         function clearMyCar() {
@@ -407,7 +427,7 @@
             if (myCarMarker) map.removeLayer(myCarMarker);
             let icon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
             myCarMarker = L.marker([pos.lat, pos.lng], {icon: icon}).addTo(map)
-                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}&travelmode=walking', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
+                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=...?daddr=${pos.lat},${pos.lng}&dirflg=w', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
         }
         function findMyCar() {
             let data = localStorage.getItem('parkkarma_my_car');
@@ -440,11 +460,58 @@
                 document.getElementById('admin-li').style.display = 'block';
             }
         }
-        function getMapCenterForAdmin() {
-            let center = map.getCenter();
-            document.getElementById('admin-p-lat').value = center.lat.toFixed(6);
-            document.getElementById('admin-p-lng').value = center.lng.toFixed(6);
+        
+        // ΛΟΓΙΚΗ ΓΙΑ DRAG & DROP ΠΙΝΕΖΑ ΑΠΟ ADMIN
+        let adminTempMarker = null;
+        async function startAdminMapDrag() {
+            let q = document.getElementById('admin-map-search').value;
+            if(!q) { alert("Γράψε διεύθυνση πρώτα!"); return; }
+            
+            closeModal('admin-modal');
+            
+            let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`);
+            let data = await res.json();
+            let lat = map.getCenter().lat, lng = map.getCenter().lng;
+            
+            if(data && data.length > 0) { lat = data[0].lat; lng = data[0].lon; }
+            else { alert("Δεν βρέθηκε η διεύθυνση, σε πάω στο κέντρο του χάρτη."); }
+            
+            map.setView([lat, lng], 18);
+            if(adminTempMarker) map.removeLayer(adminTempMarker);
+            
+            let pIcon = L.divIcon({ className: 'custom-p-icon', html: `<div style="background:#dc3545; color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:2px solid white; font-weight:bold; font-size:18px; box-shadow:0 2px 5px rgba(0,0,0,0.5);">P</div>`, iconSize: [30,30], iconAnchor: [15,30] });
+
+            adminTempMarker = L.marker([lat, lng], {draggable: true, icon: pIcon}).addTo(map);
+            adminTempMarker.bindPopup("<b>Σύρε με ακριβώς πάνω στην είσοδο του Πάρκινγκ!</b>").openPopup();
+            
+            document.getElementById('admin-confirm-btn').style.display = 'block';
         }
+
+        function confirmAdminMarker() {
+            if(adminTempMarker) {
+                let pos = adminTempMarker.getLatLng();
+                document.getElementById('admin-p-lat').value = pos.lat.toFixed(6);
+                document.getElementById('admin-p-lng').value = pos.lng.toFixed(6);
+                map.removeLayer(adminTempMarker);
+                adminTempMarker = null;
+            }
+            document.getElementById('admin-confirm-btn').style.display = 'none';
+            openModal('admin-modal');
+        }
+
+        // ΛΟΓΙΚΗ ΓΙΑ CONVERT 5 ΦΩΤΟΓΡΑΦΙΩΝ ΣΕ BASE64
+        async function getBase64Files(files) {
+            let promises = Array.from(files).slice(0, 5).map(file => {
+                return new Promise((resolve, reject) => {
+                    let reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            });
+            return await Promise.all(promises);
+        }
+
         async function openAdminPanel() {
             openModal('admin-modal');
             try {
@@ -458,13 +525,17 @@
                 }
             } catch(e) {}
         }
+
         async function adminAddOfficialParking() {
+            let fileInput = document.getElementById('admin-p-photos');
+            let base64Photos = await getBase64Files(fileInput.files);
+
             let data = {
                 owner_email: document.getElementById('admin-p-email').value,
                 name: document.getElementById('admin-p-name').value,
                 latitude: parseFloat(document.getElementById('admin-p-lat').value),
                 longitude: parseFloat(document.getElementById('admin-p-lng').value),
-                photo_url: document.getElementById('admin-p-photo').value,
+                photos: base64Photos,
                 phone: document.getElementById('admin-p-phone').value,
                 address: document.getElementById('admin-p-address').value,
                 hours_weekday: document.getElementById('admin-p-w').value || "08:00-21:00",
@@ -472,16 +543,34 @@
                 hours_sunday: document.getElementById('admin-p-sun').value || "Κλειστό"
             };
             if(!data.owner_email || !data.name || isNaN(data.latitude) || isNaN(data.longitude)) {
-                alert("Συμπληρώστε τα βασικά πεδία (Email, Όνομα, Lat, Lng)."); return;
+                alert("Συμπληρώστε τα βασικά πεδία (Email, Όνομα, Τοποθεσία)."); return;
             }
             try {
                 let res = await fetch(`${API_BASE_URL}/admin/official-parking?email=${userEmail}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
                 });
-                if(res.ok) { alert("Προστέθηκε επιτυχώς!"); loadSpots(); }
+                if(res.ok) { 
+                    alert("Προστέθηκε επιτυχώς!"); 
+                    
+                    // ΚΑΘΑΡΙΣΜΟΣ ΦΟΡΜΑΣ (RESET)
+                    document.getElementById('admin-p-email').value = "";
+                    document.getElementById('admin-p-name').value = "";
+                    document.getElementById('admin-p-lat').value = "";
+                    document.getElementById('admin-p-lng').value = "";
+                    document.getElementById('admin-p-photos').value = "";
+                    document.getElementById('admin-p-phone').value = "";
+                    document.getElementById('admin-p-address').value = "";
+                    document.getElementById('admin-p-w').value = "";
+                    document.getElementById('admin-p-sat').value = "";
+                    document.getElementById('admin-p-sun').value = "";
+                    document.getElementById('admin-map-search').value = "";
+
+                    loadSpots(); 
+                }
                 else alert("Σφάλμα.");
             } catch(e) { alert("Σφάλμα δικτύου."); }
         }
+
         async function adminBanUser() {
             let trollEmail = document.getElementById('ban-email-input').value.trim();
             if (!trollEmail) return;
@@ -516,10 +605,7 @@
             });
             if(res.ok) { alert("Ενημερώθηκε!"); closeModal('owner-modal'); loadSpots(); }
         }
-        function saveOwnerClosedStatus() {
-            // Keep existing status but toggle closed
-            updateOwnerStatus('GREEN'); // Dummy status, backend will save the toggle correctly if we fetch the current, but let's just force update via API
-        }
+        function saveOwnerClosedStatus() { updateOwnerStatus('GREEN'); }
 
         // --- GOOGLE AUTH ---
         async function handleCredentialResponse(response) {
@@ -721,10 +807,14 @@
         function saveClickedLocation() {
             if (!lastClickedMarker) return;
             let pos = lastClickedMarker.getLatLng();
+
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (currentPos) => {
                     let distance = L.latLng(currentPos.coords.latitude, currentPos.coords.longitude).distanceTo(L.latLng(pos.lat, pos.lng));
-                    if (distance > 60) { alert("Μόνο αν βρίσκεσαι κοντά της (έως 60 μέτρα)!"); return; }
+                    if (distance > 60) { 
+                        alert("Μπορείς να αποθηκεύσεις μια θέση μόνο αν βρίσκεσαι κοντά της (έως 60 μέτρα)!"); 
+                        return; 
+                    }
                     
                     if (savedPositions.length >= 10) { alert("Μέγιστο όριο 10 θέσεων!"); return; }
                     let newSpot = { lat: pos.lat, lng: pos.lng, id: null };
@@ -735,9 +825,11 @@
                     
                     savedPositions.push(newSpot);
                     if (!userEmail) localStorage.setItem('parkkarma_saved_spots', JSON.stringify(savedPositions));
-                    showAllSavedMarkers(); alert("Αποθηκεύτηκε!"); cancelClickedMarker();
-                }, (err) => { alert("Πρέπει να δώσεις άδεια (GPS)."); }, { enableHighAccuracy: true });
-            }
+                    showAllSavedMarkers(); 
+                    alert("Αποθηκεύτηκε!"); 
+                    cancelClickedMarker();
+                }, (err) => { alert("Πρέπει να δώσεις άδεια (GPS) για να αποθηκεύσεις."); }, { enableHighAccuracy: true });
+            } else { alert("Δεν υποστηρίζεται GPS."); }
         }
 
         function submitPosition(isUserMarker) {
@@ -754,7 +846,7 @@
                         if (distance > 60) { alert("Μόνο αν βρίσκεσαι κοντά της (έως 60 μέτρα)!"); return; }
                         processSubmission(pos, fileInput, isUserMarker, tagValue);
                     }, (err) => { alert("Πρέπει να δώσεις άδεια (GPS)."); }, { enableHighAccuracy: true });
-                }
+                } else { alert("Δεν υποστηρίζεται GPS."); }
             }
         }
 
@@ -772,11 +864,14 @@
 
         map.on('click', async function(e) {
             let menuOverlay = document.getElementById('menu-overlay');
-            if (menuOverlay && menuOverlay.style.display === 'block' || isPopupOpen || popupJustClosed || lastClickedMarker || searchMarker) {
-                if (menuOverlay) menuOverlay.style.display = 'none';
+            let isMenuOpen = menuOverlay && menuOverlay.style.display === 'block';
+
+            if (isMenuOpen || isPopupOpen || popupJustClosed || lastClickedMarker || searchMarker) {
+                if (isMenuOpen) menuOverlay.style.display = 'none';
                 if (lastClickedMarker) { map.removeLayer(lastClickedMarker); lastClickedMarker = null; }
                 if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
-                map.closePopup(); return; 
+                map.closePopup(); 
+                return; 
             }
 
             lastClickedMarker = L.marker(e.latlng, { draggable: true }).addTo(map);
@@ -810,17 +905,27 @@
 
         async function sendToServer(lat, lng, mins, photo, tagValue) {
             await fetch(`${API_BASE_URL}/free-spot`, { 
-                method: 'POST', headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ user_email: userEmail, latitude: lat, longitude: lng, minutes_until_free: parseInt(mins), photo: photo, tag: tagValue || null, device_id: anonDeviceID }) 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ 
+                    user_email: userEmail, 
+                    latitude: lat, 
+                    longitude: lng, 
+                    minutes_until_free: parseInt(mins), 
+                    photo: photo, 
+                    tag: tagValue || null,
+                    device_id: anonDeviceID
+                }) 
             });
-            alert(userEmail ? "Δημοσιεύτηκε! Θα κερδίσεις πόντους όταν κάποιος οδηγός πιάσει τη θέση." : "Η θέση δημοσιεύτηκε ανώνυμα!");
+            alert(userEmail ? "Δημοσιεύτηκε! Θα κερδίσεις πόντους (Karma) όταν κάποιος οδηγός πιάσει τη θέση." : "Η θέση δημοσιεύτηκε ανώνυμα!");
             map.closePopup(); loadSpots();
         }
 
         async function bookSpot(spotId) {
             let ident = userEmail ? userEmail : anonDeviceID;
             let res = await fetch(`${API_BASE_URL}/book-spot/${spotId}?occupier_id=${ident}`, { method: 'POST' });
-            if (res.ok) { alert("🚙 Η θέση κρατήθηκε για 5 λεπτά!"); map.closePopup(); loadSpots(); } else alert("Σφάλμα.");
+            if (res.ok) { alert("🚙 Η θέση κρατήθηκε για 5 λεπτά!"); map.closePopup(); loadSpots(); } 
+            else { let error = await res.json(); alert(error.detail || "Σφάλμα."); }
         }
 
         async function unbookSpot(spotId) {
@@ -830,10 +935,19 @@
         }
 
         async function reportSpot(spotId) {
-            if(confirm("Είστε σίγουρος;")) {
+            if(confirm("Είστε σίγουρος ότι αυτή η θέση είναι ψεύτικη ή δεν υπάρχει πια;")) {
                 let ident = userEmail ? userEmail : anonDeviceID;
-                await fetch(`${API_BASE_URL}/report-spot/${spotId}?reporter_id=${ident}`, { method: 'POST' });
-                alert("Αναφορά καταχωρήθηκε."); map.closePopup(); loadSpots();
+                try {
+                    let res = await fetch(`${API_BASE_URL}/report-spot/${spotId}?reporter_id=${ident}`, { method: 'POST' });
+                    if (res.ok) {
+                        let data = await res.json();
+                        alert(data.message);
+                        map.closePopup();
+                        loadSpots();
+                    } else {
+                        alert("Σφάλμα κατά την αναφορά.");
+                    }
+                } catch(e) { alert("Αποτυχία σύνδεσης με τον server."); }
             }
         }
 
@@ -843,10 +957,10 @@
             let day = now.getDay(); // 0 = Sun, 1-5 = Weekday, 6 = Sat
             let hoursStr = day === 0 ? sun : (day === 6 ? sat : w);
             
-            if (!hoursStr || hoursStr.toLowerCase().includes("κλειστό") || hoursStr.toLowerCase().includes("closed")) return false;
+            if (!hoursStr || hoursStr.toLowerCase().includes("κλειστό") || hoursStr.toLowerCase().includes("closed") || hoursStr.toLowerCase().includes("κλειστα")) return false;
             
             let parts = hoursStr.split("-");
-            if (parts.length !== 2) return true; // fallback if bad format
+            if (parts.length !== 2) return true; // Αν έχει βάλει "24 Ώρες" κλπ
             
             let currentMins = now.getHours() * 60 + now.getMinutes();
             let start = parts[0].split(":");
@@ -858,7 +972,7 @@
         }
 
         async function loadSpots() {
-            // LOAD USER SPOTS
+            // 1. ΑΠΛΕΣ ΘΕΣΕΙΣ ΧΡΗΣΤΩΝ
             let res = await fetch(`${API_BASE_URL}/search-spots`);
             let data = await res.json();
             let ident = userEmail ? userEmail : anonDeviceID;
@@ -897,19 +1011,21 @@
                     let adminInfoHtml = "";
                     if (userEmail === "george@parkkarmaapp.com") {
                         let publisher = spot.user_email ? spot.user_email : `Ανώνυμος (${spot.device_id})`;
-                        adminInfoHtml = `<div style="font-size:11px; color:#e0a800; font-weight:bold; margin-bottom:5px; background:#fff3cd; padding:3px; border-radius:4px; border:1px solid #ffeeba; word-break:break-all;">👤 Από: ${publisher}</div>`;
+                        let reportsBadge = spot.reports_count > 0 ? `<br><span style="color:red;">🚩 Αναφορές Θέσης: ${spot.reports_count}</span>` : "";
+                        let userReportsBadge = spot.user_total_reports > 0 ? `<br><span style="color:darkred;">⚠️ Συνολικές Αναφορές Χρήστη: ${spot.user_total_reports}</span>` : "";
+                        adminInfoHtml = `<div style="font-size:11px; color:#e0a800; font-weight:bold; margin-bottom:5px; background:#fff3cd; padding:3px; border-radius:4px; border:1px solid #ffeeba; word-break:break-all;">👤 Από: ${publisher}${reportsBadge}${userReportsBadge}</div>`;
                     }
                     
-                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}', '_blank')">🚗 Οδηγίες GPS</button>`;
+                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=...?daddr=${spot.latitude},${spot.longitude}&dirflg=d', '_blank')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
                         if (bookedByMe) {
                             buttonsHtml += `<button class="save-btn" onclick="unbookSpot(${spot.id})">✖️ Ακύρωση 'Έρχομαι'</button>`;
-                            buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude})">❌ Έφτασα! (Κατάληψη)</button>`;
+                            buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Έφτασα! (Κατάληψη)</button>`;
                         } else { buttonsHtml += `<p style="color:purple; font-weight:bold; margin-top:10px; border: 2px solid purple; padding: 5px; border-radius: 5px;">🟣 Οδηγός καθ' οδόν!</p>`; }
                     } else {
                         buttonsHtml += `<button class="btn-action" style="background-color: #17a2b8;" onclick="bookSpot(${spot.id})">🙋‍♂️ Έρχομαι!</button>`;
-                        buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude})">❌ Κατειλημμένη</button>`;
+                        buttonsHtml += `<button class="occupy-btn" onclick="occupySpot(${spot.id}, ${spot.latitude}, ${spot.longitude}, '${spot.device_id}')">❌ Κατειλημμένη</button>`;
                     }
 
                     buttonsHtml += `<button class="occupy-btn" style="background-color: #fd7e14; margin-top:5px;" onclick="reportSpot(${spot.id})">🚩 Αναφορά (Fake)</button>`;
@@ -917,50 +1033,66 @@
                     let popupId = `pub_addr_${spot.id}`;
                     let marker = L.marker([spot.latitude, spot.longitude], {icon: icon}).addTo(map)
                         .bindPopup(`<div class="popup-inner">${adminInfoHtml}${photoHtml}${tagHtml}<div class="address-text" id="${popupId}">📍 Φόρτωση...</div><b>Λήγει σε: ${remaining} λεπτά</b><br>${buttonsHtml}</div>`);
-                    marker.on('click', async () => { let el = document.getElementById(popupId); if(el && el.innerText.includes('Φόρτωση')) document.getElementById(popupId).innerText = `📍 ${await getAddress(spot.latitude, spot.longitude)}`; });
+                        
+                    marker.on('click', async () => {
+                        let el = document.getElementById(popupId);
+                        if(el && el.innerText.includes('Φόρτωση')) { let addr = await getAddress(spot.latitude, spot.longitude); if(document.getElementById(popupId)) document.getElementById(popupId).innerText = `📍 ${addr}`; }
+                    });
                     markers.push(marker);
                 }
             });
 
-            // LOAD OFFICIAL PARKINGS
+            // 2. ΕΠΙΣΗΜΑ ΠΑΡΚΙΝΓΚ (B2B)
             let offRes = await fetch(`${API_BASE_URL}/official-parkings`);
             let offData = await offRes.json();
             officialMarkers.forEach(m => map.removeLayer(m)); officialMarkers = [];
 
             offData.forEach(p => {
                 let isOpen = isParkingOpenNow(p.hours_weekday, p.hours_saturday, p.hours_sunday) && !p.is_closed_today;
-                
-                let iconColor = "blue"; // Default
                 let statusText = "";
+                let bgOpacity = isOpen ? "1" : "0.5"; 
                 
-                if (!isOpen) { iconColor = "black"; statusText = `<b style="color:red;">🔴 ΚΛΕΙΣΤΟ ΤΩΡΑ</b>`; }
-                else if (p.status === "RED") { iconColor = "red"; statusText = `<b style="color:red;">🔴 Πλήρες (Γεμάτο)</b>`; }
-                else if (p.status === "YELLOW") { iconColor = "gold"; statusText = `<b style="color:#e0a800;">🟡 Λίγες Θέσεις</b>`; }
-                else { iconColor = "green"; statusText = `<b style="color:green;">🟢 Διαθέσιμο</b>`; }
+                if (!isOpen) { statusText = `<b style="color:red;">🔴 ΚΛΕΙΣΤΟ ΤΩΡΑ</b>`; }
+                else if (p.status === "RED") { statusText = `<b style="color:red;">🔴 Πλήρες (Γεμάτο)</b>`; }
+                else if (p.status === "YELLOW") { statusText = `<b style="color:#e0a800;">🟡 Λίγες Θέσεις</b>`; }
+                else { statusText = `<b style="color:green;">🟢 Διαθέσιμο</b>`; }
 
-                let icon = L.icon({ iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${iconColor}.png`, shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+                // CUSTOM RED MARKER ME 'P'
+                let pIcon = L.divIcon({ 
+                    className: 'custom-p-icon', 
+                    html: `<div style="background:#dc3545; color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:2px solid white; font-weight:bold; font-size:18px; box-shadow:0 2px 5px rgba(0,0,0,0.5); opacity:${bgOpacity};">P</div>`, 
+                    iconSize: [30,30], 
+                    iconAnchor: [15,30],
+                    popupAnchor: [0, -30]
+                });
                 
-                let pPhoto = p.photo_url ? `<img src="${p.photo_url}" class="photo-preview" style="max-height:100px;">` : "";
+                // SLIDER (CAROUSEL) ΦΩΤΟΓΡΑΦΙΩΝ
+                let pPhotosHtml = "";
+                if (p.photos && p.photos.length > 0) {
+                    let imgTags = p.photos.map(src => `<img src="${src}">`).join('');
+                    pPhotosHtml = `<div class="carousel">${imgTags}</div>`;
+                }
+
                 let pPhone = p.phone ? `<p style="margin:2px 0; font-size:13px;">📞 ${p.phone}</p>` : "";
                 let pAddress = p.address ? `<p style="margin:2px 0; font-size:13px;">📍 ${p.address}</p>` : "";
                 
-                let popupContent = `<div class="popup-inner" style="width: 200px;">
-                    <h3 style="color:#007bff; margin:0 0 5px 0;">🅿️ ${p.name}</h3>
+                let popupContent = `<div class="popup-inner" style="width: 220px;">
+                    <h3 style="color:#dc3545; margin:0 0 5px 0;">🅿️ ${p.name}</h3>
                     ${statusText}
-                    ${pPhoto}
+                    <div style="margin-top:8px;">${pPhotosHtml}</div>
                     ${pAddress}
                     ${pPhone}
                     <hr style="margin:5px 0;">
                     <p style="font-size:11px; color:#555; margin:0;">⏰ Καθημ: ${p.hours_weekday} | Σαβ: ${p.hours_saturday} | Κυρ: ${p.hours_sunday}</p>
-                    <button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}', '_blank')">🚗 Πλοήγηση Στο Πάρκινγκ</button>
+                    <button class="nav-btn" style="margin-top:8px; background-color:#dc3545;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=...?daddr=${p.latitude},${p.longitude}&dirflg=d', '_blank')">🚗 Πλοήγηση Στο Πάρκινγκ</button>
                 </div>`;
                 
-                let marker = L.marker([p.latitude, p.longitude], {icon: icon}).addTo(map).bindPopup(popupContent);
+                let marker = L.marker([p.latitude, p.longitude], {icon: pIcon}).addTo(map).bindPopup(popupContent);
                 officialMarkers.push(marker);
             });
         }
 
-        async function occupySpot(spotId, spotLat, spotLng) {
+        async function occupySpot(spotId, spotLat, spotLng, creatorId) {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     let distance = L.latLng(pos.coords.latitude, pos.coords.longitude).distanceTo(L.latLng(spotLat, spotLng));
@@ -973,12 +1105,18 @@
         }
 
         resetUserMarker(); loadSpots(); 
+        
         setInterval(loadSpots, 20000);
         setInterval(fetchKarma, 20000);
 
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(err => {}); });
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker Registered!'))
+                    .catch(err => console.log('Service Worker Failed:', err));
+            });
         }
+
         window.addEventListener('DOMContentLoaded', checkTermsOnStartup);
     </script>
 </body>
