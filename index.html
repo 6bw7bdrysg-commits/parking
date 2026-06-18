@@ -201,7 +201,7 @@
             • <b>🟢 Πράσινο:</b> Η θέση είναι ελεύθερη – πρόλαβέ την!<br>
             • <b>🔴 Κόκκινο:</b> Ο οδηγός φεύγει σε λιγότερο από 3 λεπτά.<br>
             • <b>🟣 Μοβ:</b> Κάποιος έχει πατήσει "Έρχομαι!". Ψάξε για άλλη!<br>
-            • <b>📍 GPS:</b> Πάτα "Οδηγίες" for πλοήγηση.
+            • <b>📍 GPS:</b> Πάτα "Οδηγίες" για πλοήγηση.
             </p>
 
             <h3 style="margin-bottom: 5px;">2. Κάνε κράτηση (Έρχομαι!) 🙋‍♂️</h3>
@@ -704,6 +704,7 @@
             showAllSavedMarkers(); alert("Αποθηκεύτηκε!"); userMarker.closePopup();
         }
 
+        // --- ΕΛΕΓΧΟΣ 60 ΜΕΤΡΩΝ ΚΑΙ ΣΤΗΝ ΑΠΟΘΗΚΕΥΣΗ CLICKED ΠΙΝΕΖΑΣ ---
         function saveClickedLocation() {
             if (!lastClickedMarker) return;
             let pos = lastClickedMarker.getLatLng();
