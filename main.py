@@ -181,7 +181,8 @@ async def search_spots(db: Session = Depends(get_db)):
             "created_at": s.created_at.isoformat() + "Z",
             "is_booked": s.is_booked,
             "booked_by": s.booked_by,
-            "device_id": s.device_id
+            "device_id": s.device_id,
+            "user_email": s.user_email  # Προσθήκη για τον Admin
         })
     return {"spots": spots_list}
 
@@ -255,15 +256,22 @@ async def admin_ban_user(email: str, user_to_ban: str, db: Session = Depends(get
     if email != ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Δεν έχετε δικαιώματα διαχειριστή.")
         
-    user = db.query(User).filter(User.email == user_to_ban).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Ο χρήστης δεν βρέθηκε.")
-        
-    db.query(SavedLocation).filter(SavedLocation.user_email == user_to_ban).delete()
-    db.query(ParkingSpot).filter(ParkingSpot.user_email == user_to_ban).delete()
-    db.delete(user)
-    db.commit()
-    return {"message": f"Ο χρήστης {user_to_ban} διαγράφηκε επιτυχώς."}
+    # Έλεγχος αν πρόκειται για Email ή για Ανώνυμο Device ID
+    if "anon_" in user_to_ban:
+        # Ανώνυμος: Διαγράφουμε απλά όλες τις πινέζες αυτού του Device ID
+        db.query(ParkingSpot).filter(ParkingSpot.device_id == user_to_ban).delete()
+        db.commit()
+        return {"message": f"Οι θέσεις της ανώνυμης συσκευής {user_to_ban} διαγράφηκαν."}
+    else:
+        # Επώνυμος Χρήστης: Πλήρης διαγραφή
+        user = db.query(User).filter(User.email == user_to_ban).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Ο χρήστης δεν βρέθηκε.")
+        db.query(SavedLocation).filter(SavedLocation.user_email == user_to_ban).delete()
+        db.query(ParkingSpot).filter(ParkingSpot.user_email == user_to_ban).delete()
+        db.delete(user)
+        db.commit()
+        return {"message": f"Ο χρήστης {user_to_ban} διαγράφηκε επιτυχώς."}
 
 # --- ΦΟΡΤΩΣΗ ΤΗΣ ΙΣΤΟΣΕΛΙΔΑΣ (FRONTEND) ---
 @app.get("/")
