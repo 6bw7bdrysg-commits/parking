@@ -205,7 +205,7 @@
             </p>
 
             <h3 style="margin-bottom: 5px;">2. Κάνε κράτηση (Έρχομαι!) 🙋‍♂️</h3>
-            <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" for σένα για 5 λεπτά, ώστε οι άλλοι να μην κατευθυνθούν εκεί.</p>
+            <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" για σένα για 5 λεπτά, ώστε οι άλλοι να μην κατευθυνθούν εκεί.</p>
 
             <h3 style="margin-bottom: 5px;">3. Radar Θέσεων 📡</h3>
             <p style="margin-top: 0; font-size: 14px;">Αν αδειάσει θέση σε ακτίνα 1χλμ, ακούς "Μπιπ!" (Θυμήσου να πατήσεις μια φορά τον χάρτη όταν μπαίνεις για να επιτρέψεις τον ήχο).</p>
@@ -238,9 +238,9 @@
         <div class="modal-content">
             <h2 style="color:#007bff;">👥 Σχετικά με εμάς</h2>
             
-            <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις аτέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
+            <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις ατέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
             
-            <p>Σκεφτήκαμε το εξής απλό: Γιατί να ψάχνουμε στα τυφλά, όταν μπορούμε να γίνουμε όλοι μαζί ένας «ζωντανός χάρτης»; Όταν φεύγει ένας, μπορεί να έρθει απευθείας ο επόμενος. Χαιρόμαστε χωρίς άγχος, χωρίς χαμένη βενζίνη.</p>
+            <p>Σκεφτήκαμε το εξής απλό: Γιατί να ψάχνουμε στα τυφλά, όταν μπορούμε να γίνουμε όλοι μαζί ένας «ζωντανός χάρτης»; Όταν φεύγει ένας, μπορεί να έρθει απευθείας ο επόμενος. Χωρίς άγχος, χωρίς χαμένη βενζίνη.</p>
             
             <div style="background: #e9ecef; padding: 10px; border-radius: 8px; margin: 15px 0; color: #333;">
                 <p style="margin: 0;">Σκοπός μας δεν είναι απλώς να φτιάξουμε άλλη μια εφαρμογή, αλλά μια <b>κοινότητα αλληλεγγύης</b>. Να μοιραζόμαστε τον χώρο και να κάνουμε την πόλη μας πιο φιλική και την καθημερινότητά μας πιο εύκολη.</p>
@@ -402,7 +402,7 @@
             let icon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
             
             myCarMarker = L.marker([pos.lat, pos.lng], {icon: icon}).addTo(map)
-                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('http://googleusercontent.com/maps.google.com/maps?daddr=${pos.lat},${pos.lng}&travelmode=walking', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
+                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}&travelmode=walking', '_blank')">🚶 Πλοήγηση (Πόδια)</button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
         }
         function findMyCar() {
             let data = localStorage.getItem('parkkarma_my_car');
@@ -563,7 +563,7 @@
                 alert("Πρέπει να αποδεχτείτε τους όρους χρήσης για να χρησιμοποιήσετε την εφαρμογή.");
                 return;
             }
-            document.getElementById(id).style.none; 
+            document.getElementById(id).style.display = 'none'; 
         }
 
         function checkTermsOnStartup() {
@@ -852,7 +852,7 @@
                         adminInfoHtml = `<div style="font-size:11px; color:#e0a800; font-weight:bold; margin-bottom:5px; background:#fff3cd; padding:3px; border-radius:4px; border:1px solid #ffeeba; word-break:break-all;">👤 Από: ${publisher}${reportsBadge}${userReportsBadge}</div>`;
                     }
                     
-                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('http://googleusercontent.com/maps.google.com/maps?daddr=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')">🚗 Οδηγίες GPS</button>`;
+                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')">🚗 Οδηγίες GPS</button>`;
                     
                     if (isBooked) {
                         if (bookedByMe) {
