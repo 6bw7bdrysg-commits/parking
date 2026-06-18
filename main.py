@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime, timedelta
 from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException, Query
@@ -59,7 +60,6 @@ class KarmaTransaction(Base):
     amount = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# Νέος πίνακας για τα Επίσημα Ιδιωτικά Πάρκινγκ
 class OfficialParking(Base):
     __tablename__ = "official_parkings"
     id = Column(Integer, primary_key=True, index=True)
@@ -67,13 +67,13 @@ class OfficialParking(Base):
     name = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)
-    photo_url = Column(String, nullable=True)
+    photo_url = Column(String, nullable=True) # Εδώ πλέον θα αποθηκεύουμε ένα JSON array με τις 5 φωτό
     phone = Column(String, nullable=True)
     address = Column(String, nullable=True)
     hours_weekday = Column(String, default="08:00-21:00")
     hours_saturday = Column(String, default="08:00-15:00")
     hours_sunday = Column(String, default="Κλειστό")
-    status = Column(String, default="GREEN") # GREEN, YELLOW, RED
+    status = Column(String, default="GREEN") 
     is_closed_today = Column(Boolean, default=False)
 
 Base.metadata.create_all(bind=engine)
@@ -119,7 +119,7 @@ class OfficialParkingCreate(BaseModel):
     name: str
     latitude: float
     longitude: float
-    photo_url: Optional[str] = None
+    photos: Optional[List[str]] = []
     phone: Optional[str] = None
     address: Optional[str] = None
     hours_weekday: str
@@ -283,7 +283,6 @@ async def occupy_spot(spot_id: int, occupier_email: str, db: Session = Depends(g
     if not spot:
         raise HTTPException(status_code=404, detail="Δεν βρέθηκε η θέση")
         
-    # LOGIC KARMA: +10 μόνο αν άλλος πάτησε κατάληψη & Όριο 40 πόντων ανά ημέρα
     if spot.user_email and spot.user_email != occupier_email:
         creator = db.query(User).filter(User.email == spot.user_email).first()
         if creator:
@@ -323,7 +322,31 @@ async def delete_saved_location(db_id: int, db: Session = Depends(get_db)):
 
 @app.get("/official-parkings")
 async def get_official_parkings(db: Session = Depends(get_db)):
-    return db.query(OfficialParking).all()
+    parkings = db.query(OfficialParking).all()
+    res = []
+    for p in parkings:
+        photo_list = []
+        if p.photo_url:
+            try:
+                photo_list = json.loads(p.photo_url)
+            except:
+                pass
+        res.append({
+            "id": p.id,
+            "owner_email": p.owner_email,
+            "name": p.name,
+            "latitude": p.latitude,
+            "longitude": p.longitude,
+            "photos": photo_list,
+            "phone": p.phone,
+            "address": p.address,
+            "hours_weekday": p.hours_weekday,
+            "hours_saturday": p.hours_saturday,
+            "hours_sunday": p.hours_sunday,
+            "status": p.status,
+            "is_closed_today": p.is_closed_today
+        })
+    return res
 
 @app.post("/admin/official-parking")
 async def add_official_parking(parking: OfficialParkingCreate, email: str = Query(...), db: Session = Depends(get_db)):
@@ -335,7 +358,7 @@ async def add_official_parking(parking: OfficialParkingCreate, email: str = Quer
         name=parking.name,
         latitude=parking.latitude,
         longitude=parking.longitude,
-        photo_url=parking.photo_url,
+        photo_url=json.dumps(parking.photos),
         phone=parking.phone,
         address=parking.address,
         hours_weekday=parking.hours_weekday,
