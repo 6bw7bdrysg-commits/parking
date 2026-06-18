@@ -122,8 +122,13 @@
         body.dark-mode .popup-inner { background:#222; color:white; }
         body.dark-mode .tag-dropdown { background: #333; color: white; border: 1px solid #555; }
 
-        /* MODAL ΓΙΑ PARKING ADMIN */
-        .admin-input { width: 100%; padding: 8px; margin: 5px 0 15px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;}
+        /* MODAL ΓΙΑ PARKING ADMIN & ΛΙΣΤΕΣ */
+        .admin-input { width: 100%; padding: 8px; margin: 5px 0 10px 0; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;}
+        details { background: #f8f9fa; border-radius: 8px; padding: 10px; border: 1px solid #ddd; }
+        summary { cursor: pointer; font-size: 15px; outline: none; font-weight: bold; }
+        body.dark-mode details { background: #333; border-color: #555; color: white; }
+        .admin-list-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #ccc; font-size:13px; }
+        .admin-list-actions button { padding: 5px 8px; font-size: 12px; margin-left: 3px; cursor: pointer; border-radius: 4px; border: none; color: white; font-weight: bold; }
 
         /* ΕΙΔΙΚΗ ΠΙΝΕΖΑ ΠΑΡΚΙΝΓΚ (RED) */
         .custom-p-icon { background:transparent; border:none; }
@@ -289,51 +294,67 @@
 
     <div id="admin-modal" class="modal">
         <div class="modal-content">
-            <h2 style="color:#e0a800; text-align: center;">👑 Πίνακας Διαχειριστή</h2>
+            <h2 style="color:#e0a800; text-align: center; margin-top:0;">👑 Πίνακας Διαχειριστή</h2>
             
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; color: #333;">
-                <h3 style="margin-top: 0;">📊 Live Στατιστικά</h3>
-                <p>• Χρήστες: <b id="stat-users">0</b></p>
-                <p>• Ελεύθερες Πινέζες: <b id="stat-active">0</b></p>
-                <p>• Κρατημένες Πινέζες: <b id="stat-booked">0</b></p>
-                <p>• Επίσημα Πάρκινγκ: <b id="stat-official">0</b></p>
-            </div>
-
-            <div style="background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 20px; color: #333;">
-                <h3 style="margin-top: 0; color: #007bff;">🏢 Προσθήκη Επίσημου Πάρκινγκ</h3>
-                <input type="text" id="admin-p-email" class="admin-input" placeholder="Email Ιδιοκτήτη (π.χ. owner@gmail.com)">
-                <input type="text" id="admin-p-name" class="admin-input" placeholder="Όνομα Πάρκινγκ">
-                
-                <div style="background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-bottom:15px;">
-                    <p style="font-size:12px; font-weight:bold; margin-top:0;">📍 Εύρεση Τοποθεσίας</p>
-                    <input type="text" id="admin-map-search" class="admin-input" style="margin-bottom:5px;" placeholder="Γράψε Διεύθυνση (π.χ. Αθηνάς 10, Λάρισα)">
-                    <button class="nav-btn" style="margin-top:0; font-size:13px;" onclick="startAdminMapDrag()">🔍 Βρες & Βάλε Πινέζα στον Χάρτη</button>
-                    
-                    <div style="display:flex; gap:5px; margin-top:10px;">
-                        <input type="text" id="admin-p-lat" class="admin-input" style="margin:0;" placeholder="Latitude" readonly>
-                        <input type="text" id="admin-p-lng" class="admin-input" style="margin:0;" placeholder="Longitude" readonly>
-                    </div>
+            <details style="margin-bottom: 10px;">
+                <summary>📊 Live Στατιστικά</summary>
+                <div style="padding-top: 10px; color: #333;">
+                    <p>• Χρήστες: <b id="stat-users">0</b></p>
+                    <p>• Ελεύθερες Πινέζες: <b id="stat-active">0</b></p>
+                    <p>• Κρατημένες Πινέζες: <b id="stat-booked">0</b></p>
+                    <p>• Επίσημα Πάρκινγκ: <b id="stat-official">0</b></p>
                 </div>
-                
-                <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">📸 Φωτογραφίες (Έως 5, Slider)</p>
-                <input type="file" id="admin-p-photos" class="admin-input" accept="image/*" multiple>
+            </details>
 
-                <input type="text" id="admin-p-phone" class="admin-input" placeholder="Τηλέφωνο / Τιμή (π.χ. 2410... / 5€ η μέρα)">
-                <input type="text" id="admin-p-address" class="admin-input" placeholder="Οδός & Αριθμός">
-                
-                <p style="font-size:12px; margin-bottom:2px; font-weight:bold;">⏰ Ωράρια (π.χ. 08:00-21:00 ή Κλειστό)</p>
-                <input type="text" id="admin-p-w" class="admin-input" placeholder="Καθημερινές">
-                <input type="text" id="admin-p-sat" class="admin-input" placeholder="Σάββατο">
-                <input type="text" id="admin-p-sun" class="admin-input" placeholder="Κυριακή">
-                
-                <button class="btn-action" onclick="adminAddOfficialParking()">✅ Καταχώρηση Πάρκινγκ</button>
-            </div>
+            <details style="margin-bottom: 10px;" id="admin-form-details">
+                <summary><span style="color: #007bff;">🏢 Προσθήκη / Επεξεργασία Πάρκινγκ</span></summary>
+                <div style="padding-top: 10px; color: #333;">
+                    <input type="hidden" id="admin-p-id" value="">
+                    
+                    <input type="text" id="admin-p-email" class="admin-input" placeholder="Email Ιδιοκτήτη (π.χ. owner@gmail.com)">
+                    <input type="text" id="admin-p-name" class="admin-input" placeholder="Όνομα Πάρκινγκ">
+                    
+                    <div style="background: #fff; padding: 10px; border-radius: 5px; border: 1px solid #ccc; margin-bottom:15px;">
+                        <p style="font-size:12px; font-weight:bold; margin-top:0;">📍 Εύρεση Τοποθεσίας</p>
+                        <input type="text" id="admin-map-search" class="admin-input" style="margin-bottom:5px;" placeholder="Γράψε Διεύθυνση (π.χ. Αθηνάς 10, Λάρισα)">
+                        <button class="nav-btn" style="margin-top:0; font-size:13px;" onclick="startAdminMapDrag()">🔍 Βρες & Βάλε Πινέζα στον Χάρτη</button>
+                        
+                        <div style="display:flex; gap:5px; margin-top:10px;">
+                            <input type="text" id="admin-p-lat" class="admin-input" style="margin:0;" placeholder="Latitude" readonly>
+                            <input type="text" id="admin-p-lng" class="admin-input" style="margin:0;" placeholder="Longitude" readonly>
+                        </div>
+                    </div>
+                    
+                    <p style="font-size:12px; font-weight:bold; margin-bottom:5px;">📸 Φωτογραφίες (Έως 5, Slider)</p>
+                    <input type="file" id="admin-p-photos" class="admin-input" accept="image/*" multiple>
 
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; color: #333;">
-                <h3 style="margin-top: 0; color: #dc3545;">🚫 Διαγραφή Χρηστών (Ban)</h3>
-                <input type="text" id="ban-email-input" class="admin-input" placeholder="π.χ. troll@gmail.com ή anon_x9b2">
-                <button class="occupy-btn" onclick="adminBanUser()">Οριστική Διαγραφή</button>
-            </div>
+                    <input type="text" id="admin-p-phone" class="admin-input" placeholder="Τηλέφωνο / Τιμή (π.χ. 2410... / 5€ η μέρα)">
+                    <input type="text" id="admin-p-address" class="admin-input" placeholder="Οδός & Αριθμός">
+                    
+                    <p style="font-size:12px; margin-bottom:2px; font-weight:bold;">⏰ Ωράρια (π.χ. 08:00-21:00 ή Κλειστό)</p>
+                    <input type="text" id="admin-p-w" class="admin-input" placeholder="Καθημερινές">
+                    <input type="text" id="admin-p-sat" class="admin-input" placeholder="Σάββατο">
+                    <input type="text" id="admin-p-sun" class="admin-input" placeholder="Κυριακή">
+                    
+                    <button class="btn-action" onclick="adminSaveOfficialParking()">✅ Αποθήκευση Πάρκινγκ</button>
+                    <button class="occupy-btn" onclick="clearAdminForm()" style="margin-top:5px;">✖️ Καθαρισμός Φόρμας</button>
+                </div>
+            </details>
+
+            <details style="margin-bottom: 10px;" ontoggle="if(this.open) loadAdminLists()">
+                <summary>📋 Λίστα Πάρκινγκ</summary>
+                <div id="admin-parking-list" style="padding-top: 10px; color: #333;">Φόρτωση...</div>
+            </details>
+
+            <details style="margin-bottom: 10px;" ontoggle="if(this.open) loadAdminLists()">
+                <summary><span style="color: #dc3545;">👥 Διαχείριση Χρηστών (Ban)</span></summary>
+                <div style="padding-top: 10px; color: #333;">
+                    <h4 style="margin-bottom: 5px; color:#007bff;">Επώνυμοι (Με Email)</h4>
+                    <div id="admin-users-google">Φόρτωση...</div>
+                    <h4 style="margin-bottom: 5px; margin-top:15px; color:#007bff;">Ανώνυμοι (Device IDs)</h4>
+                    <div id="admin-users-anon">Φόρτωση...</div>
+                </div>
+            </details>
 
             <button class="close-modal" style="margin-top: 20px; background-color: #343a40;" onclick="closeModal('admin-modal')">Κλείσιμο</button>
         </div>
@@ -347,6 +368,7 @@
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
         var savedPositions = [], markers = [], officialMarkers = [], savedMarkers = [], userMarker = null, lastClickedMarker = null, searchMarker = null, myCarMarker = null;
+        var globalOfficialParkings = []; // Για το Edit
 
         let userEmail = localStorage.getItem('parkkarma_email') || null;
         let anonDeviceID = localStorage.getItem('parkkarma_anon_id');
@@ -526,7 +548,77 @@
             } catch(e) {}
         }
 
-        async function adminAddOfficialParking() {
+        // LOAD ADMIN LISTS (PARKINGS & USERS)
+        async function loadAdminLists() {
+            try {
+                // 1. Parking List
+                let offRes = await fetch(`${API_BASE_URL}/official-parkings`);
+                globalOfficialParkings = await offRes.json();
+                let pList = globalOfficialParkings.map(p => `
+                    <div class="admin-list-item">
+                        <span><b>${p.name}</b> <small>(${p.owner_email})</small></span>
+                        <div class="admin-list-actions">
+                            <button style="background:#007bff;" onclick="editAdminParking(${p.id})">✏️</button>
+                            <button style="background:#dc3545;" onclick="promptDeleteParking(${p.id})">🗑️</button>
+                        </div>
+                    </div>`).join('');
+                document.getElementById('admin-parking-list').innerHTML = pList || "Κανένα πάρκινγκ.";
+
+                // 2. Users List
+                let uRes = await fetch(`${API_BASE_URL}/admin/users-list?email=${userEmail}`);
+                let uData = await uRes.json();
+                
+                let gList = uData.emails.map(u => `
+                    <div class="admin-list-item">
+                        <span>${u.reports > 0 ? `<b style="color:red;">🚩 ${u.reports}</b> ` : ""}${u.email}</span>
+                        <button style="background:#dc3545; padding:4px 8px; border:none; border-radius:4px; cursor:pointer;" onclick="adminBanUser('${u.email}')">🗑️ Ban</button>
+                    </div>`).join('');
+                document.getElementById('admin-users-google').innerHTML = gList || "Κανένας.";
+
+                let aList = uData.anons.map(u => `
+                    <div class="admin-list-item">
+                        <span>${u.reports > 0 ? `<b style="color:red;">🚩 ${u.reports}</b> ` : ""}${u.device_id}</span>
+                        <button style="background:#dc3545; padding:4px 8px; border:none; border-radius:4px; cursor:pointer;" onclick="adminBanUser('${u.device_id}')">🗑️ Ban</button>
+                    </div>`).join('');
+                document.getElementById('admin-users-anon').innerHTML = aList || "Κανένας.";
+
+            } catch(e) {}
+        }
+
+        function clearAdminForm() {
+            document.getElementById('admin-p-id').value = "";
+            document.getElementById('admin-p-email').value = "";
+            document.getElementById('admin-p-name').value = "";
+            document.getElementById('admin-p-lat').value = "";
+            document.getElementById('admin-p-lng').value = "";
+            document.getElementById('admin-p-photos').value = "";
+            document.getElementById('admin-p-phone').value = "";
+            document.getElementById('admin-p-address').value = "";
+            document.getElementById('admin-p-w').value = "";
+            document.getElementById('admin-p-sat').value = "";
+            document.getElementById('admin-p-sun').value = "";
+            document.getElementById('admin-map-search').value = "";
+        }
+
+        function editAdminParking(id) {
+            let p = globalOfficialParkings.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('admin-form-details').open = true;
+            document.getElementById('admin-p-id').value = p.id;
+            document.getElementById('admin-p-email').value = p.owner_email;
+            document.getElementById('admin-p-name').value = p.name;
+            document.getElementById('admin-p-lat').value = p.latitude;
+            document.getElementById('admin-p-lng').value = p.longitude;
+            document.getElementById('admin-p-phone').value = p.phone || "";
+            document.getElementById('admin-p-address').value = p.address || "";
+            document.getElementById('admin-p-w').value = p.hours_weekday;
+            document.getElementById('admin-p-sat').value = p.hours_saturday;
+            document.getElementById('admin-p-sun').value = p.hours_sunday;
+            document.getElementById('admin-modal').scrollTo(0,0);
+        }
+
+        async function adminSaveOfficialParking() {
+            let pid = document.getElementById('admin-p-id').value;
             let fileInput = document.getElementById('admin-p-photos');
             let base64Photos = await getBase64Files(fileInput.files);
 
@@ -542,42 +634,49 @@
                 hours_saturday: document.getElementById('admin-p-sat').value || "08:00-15:00",
                 hours_sunday: document.getElementById('admin-p-sun').value || "Κλειστό"
             };
+            
             if(!data.owner_email || !data.name || isNaN(data.latitude) || isNaN(data.longitude)) {
                 alert("Συμπληρώστε τα βασικά πεδία (Email, Όνομα, Τοποθεσία)."); return;
             }
-            try {
-                let res = await fetch(`${API_BASE_URL}/admin/official-parking?email=${userEmail}`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
-                });
-                if(res.ok) { 
-                    alert("Προστέθηκε επιτυχώς!"); 
-                    
-                    // ΚΑΘΑΡΙΣΜΟΣ ΦΟΡΜΑΣ (RESET)
-                    document.getElementById('admin-p-email').value = "";
-                    document.getElementById('admin-p-name').value = "";
-                    document.getElementById('admin-p-lat').value = "";
-                    document.getElementById('admin-p-lng').value = "";
-                    document.getElementById('admin-p-photos').value = "";
-                    document.getElementById('admin-p-phone').value = "";
-                    document.getElementById('admin-p-address').value = "";
-                    document.getElementById('admin-p-w').value = "";
-                    document.getElementById('admin-p-sat').value = "";
-                    document.getElementById('admin-p-sun').value = "";
-                    document.getElementById('admin-map-search').value = "";
 
-                    loadSpots(); 
+            try {
+                let res;
+                if(pid) { // EDIT (PUT)
+                    res = await fetch(`${API_BASE_URL}/admin/official-parking/${pid}?email=${userEmail}`, {
+                        method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+                    });
+                } else { // NEW (POST)
+                    res = await fetch(`${API_BASE_URL}/admin/official-parking?email=${userEmail}`, {
+                        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+                    });
                 }
-                else alert("Σφάλμα.");
+                
+                if(res.ok) { 
+                    alert("Επιτυχία!"); 
+                    clearAdminForm(); 
+                    loadAdminLists(); 
+                    loadSpots(); 
+                } else alert("Σφάλμα.");
             } catch(e) { alert("Σφάλμα δικτύου."); }
         }
 
-        async function adminBanUser() {
-            let trollEmail = document.getElementById('ban-email-input').value.trim();
+        async function promptDeleteParking(id) {
+            let code = prompt("ΠΡΟΣΟΧΗ! Για να διαγράψετε το πάρκινγκ πληκτρολογήστε τον κωδικό ADMIN (GEORGE2026):");
+            if(code) {
+                try {
+                    let res = await fetch(`${API_BASE_URL}/admin/official-parking/${id}?email=${userEmail}&secret_code=${code}`, { method: 'DELETE' });
+                    if(res.ok) { alert("Διαγράφηκε."); loadAdminLists(); loadSpots(); }
+                    else alert("Λάθος κωδικός ή σφάλμα.");
+                } catch(e) {}
+            }
+        }
+
+        async function adminBanUser(trollEmail) {
             if (!trollEmail) return;
-            if (confirm(`Διαγραφή του ${trollEmail};`)) {
+            if (confirm(`Οριστική διαγραφή του ${trollEmail} και όλων των θέσεών του;`)) {
                 try {
                     let res = await fetch(`${API_BASE_URL}/admin/ban-user?email=${userEmail}&user_to_ban=${trollEmail}`, { method: 'DELETE' });
-                    if (res.ok) { alert("Επιτυχία!"); document.getElementById('ban-email-input').value = ""; openAdminPanel(); loadSpots(); }
+                    if (res.ok) { alert("Επιτυχία!"); loadAdminLists(); loadSpots(); }
                 } catch(e) {}
             }
         }
