@@ -133,7 +133,7 @@
         .admin-list-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #ccc; font-size:13px; }
         .admin-list-actions button { padding: 5px 8px; font-size: 12px; margin-left: 3px; cursor: pointer; border-radius: 4px; border: none; color: white; font-weight: bold; }
 
-        /* ΕΙΔΙΚΗ ΠΙΝΕΖΑ ΠΑΡΚΙΝΓΚ (RED) */
+        /* ΕΙΔΙΚΗ ΠΙΝΕΖΑ ΠΑΡΚΙΝΓΚ (AMBER) */
         .custom-p-icon { background:transparent; border:none; }
 
         /* RESPONSIVE CSS ΓΙΑ ΚΙΝΗΤΑ */
@@ -160,7 +160,9 @@
     <div class="filter-container">
         <select id="filterStatus" class="filter-select" onchange="loadSpots()">
             <option value="all">🚦 Όλες οι Καταστάσεις</option>
-            <option value="green">🟢 Μόνο Ελεύθερες</option>
+            <option value="street">🆓 Μόνο Δρόμου (Δωρεάν)</option>
+            <option value="official">💰 Πάρκινγκ επί Πληρωμή</option>
+            <option value="green">🟢 Μόνο Ελεύθερες (Δρόμου)</option>
             <option value="red">🔴 Λήγουν Σύντομα</option>
             <option value="violet">🟣 Κρατημένες</option>
         </select>
@@ -248,7 +250,7 @@
             • <b>🟢 Πράσινο:</b> Η θέση είναι ελεύθερη – πρόλαβέ την!<br>
             • <b>🔴 Κόκκινο:</b> Ο οδηγός φεύγει σε λιγότερο από 3 λεπτά.<br>
             • <b>🟣 Μοβ:</b> Κάποιος έχει πατήσει "Έρχομαι!". Ψάξε για άλλη!<br>
-            • <b>🔴 Πάρκινγκ με "P":</b> Ιδιωτικά συνεργαζόμενα πάρκινγκ. Δες live διαθεσιμότητα και φωτογραφίες.
+            • <b>💰 Πάρκινγκ με "P":</b> Ιδιωτικά συνεργαζόμενα πάρκινγκ. Δες live διαθεσιμότητα και φωτογραφίες.
             </p>
             <h3 style="margin-bottom: 5px;">2. Κάνε κράτηση (Έρχομαι!) 🙋‍♂️</h3>
             <p style="margin-top: 0; font-size: 14px;">Πάτα "Έρχομαι!" σε μια θέση. Γίνεται <b>Μοβ</b> και "κλειδώνει" για σένα για 5 λεπτά.</p>
@@ -270,7 +272,7 @@
     <div id="about-modal" class="modal">
         <div class="modal-content">
             <h2 style="color:#007bff;">👥 Σχετικά με εμάς</h2>
-            <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις аτέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
+            <p>Το <b>ParkKarma</b> γεννήθηκε μέσα από το τιμόνι, τις ατέλειωτες γύρες στο ίδιο τετράγωνο και την κλασική καθημερινή ερώτηση: <i>«Πού θα παρκάρω πάλι;»</i>.</p>
             <p>Σκοπός μας δεν είναι απλώς να φτιάξουμε άλλη μια εφαρμογή, αλλά μια <b>κοινότητα αλληλεγγύης</b>.</p>
             <h3 style="color:#333; margin-bottom: 5px;">🚀 Το Μέλλον</h3>
             <p style="margin-top: 0; font-size: 14px;">Το όραμά μας είναι το ParkKarma να εξελιχθεί στον απόλυτο συνοδηγό σου.</p>
@@ -371,7 +373,7 @@
         const API_BASE_URL = "https://parking-mhsn.onrender.com";
         var map = L.map('map', { maxZoom: 19, minZoom: 3 }).setView([39.6384, 22.4152], 16);
         var savedPositions = [], markers = [], officialMarkers = [], savedMarkers = [], userMarker = null, lastClickedMarker = null, searchMarker = null, myCarMarker = null;
-        var globalOfficialParkings = []; // Για το Edit
+        var globalOfficialParkings = [];
 
         let userEmail = localStorage.getItem('parkkarma_email') || null;
         let anonDeviceID = localStorage.getItem('parkkarma_anon_id');
@@ -452,7 +454,7 @@
             if (myCarMarker) map.removeLayer(myCarMarker);
             let icon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
             myCarMarker = L.marker([pos.lat, pos.lng], {icon: icon}).addTo(map)
-                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${pos.lat},${pos.lng}', '_blank')"><b>🚶 Πλοήγηση (Πόδια)</b></button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
+                .bindPopup(`<div class="popup-inner"><b>Το αυτοκίνητό μου 🚗</b><br><button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}&travelmode=walking', '_blank')"><b>🚶 Πλοήγηση (Πόδια)</b></button><button class="occupy-btn" onclick="clearMyCar()">❌ Διαγραφή</button></div>`);
         }
         function findMyCar() {
             let data = localStorage.getItem('parkkarma_my_car');
@@ -486,7 +488,6 @@
             }
         }
         
-        // ΛΟΓΙΚΗ ΓΙΑ DRAG & DROP ΠΙΝΕΖΑ ΑΠΟ ADMIN
         let adminTempMarker = null;
         async function startAdminMapDrag() {
             let q = document.getElementById('admin-map-search').value;
@@ -524,7 +525,6 @@
             openModal('admin-modal');
         }
 
-        // ΛΟΓΙΚΗ ΓΙΑ CONVERT 5 ΦΩΤΟΓΡΑΦΙΩΝ ΣΕ BASE64
         async function getBase64Files(files) {
             let promises = Array.from(files).slice(0, 5).map(file => {
                 return new Promise((resolve, reject) => {
@@ -551,7 +551,6 @@
             } catch(e) {}
         }
 
-        // LOAD ADMIN LISTS (PARKINGS & USERS)
         async function loadAdminLists() {
             try {
                 // 1. Parking List
@@ -644,11 +643,11 @@
 
             try {
                 let res;
-                if(pid) { // EDIT (PUT)
+                if(pid) { 
                     res = await fetch(`${API_BASE_URL}/admin/official-parking/${pid}?email=${userEmail}`, {
                         method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
                     });
-                } else { // NEW (POST)
+                } else { 
                     res = await fetch(`${API_BASE_URL}/admin/official-parking?email=${userEmail}`, {
                         method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
                     });
@@ -766,7 +765,6 @@
 
         function toggleMenu() { document.getElementById('menu-overlay').style.display = (document.getElementById('menu-overlay').style.display === 'block') ? 'none' : 'block'; }
         
-        // Τροποποιημένη openModal για να μην επηρεάζει αρνητικά
         function openModal(id) { 
             if (localStorage.getItem('parkkarma_terms_accepted') !== 'true' && id !== 'terms-modal') return;
             document.getElementById(id).style.display = 'block'; 
@@ -1108,6 +1106,8 @@
                     if (filterStatus === 'green' && color !== 'green') return; 
                     if (filterStatus === 'red' && color !== 'red') return;
                     if (filterStatus === 'violet' && color !== 'violet') return;
+                    if (filterStatus === 'official') return; // Κρύβει τις θέσεις δρόμου αν ζητηθούν μόνο τα επίσημα
+                    
                     if (filterTag === 'photo' && !spot.photo) return;
                     if (filterTag !== 'all' && filterTag !== 'photo' && spot.tag !== filterTag) return;
                     
@@ -1123,7 +1123,7 @@
                         adminInfoHtml = `<div style="font-size:11px; color:#e0a800; font-weight:bold; margin-bottom:5px; background:#fff3cd; padding:3px; border-radius:4px; border:1px solid #ffeeba; word-break:break-all;">👤 Από: ${publisher}${reportsBadge}${userReportsBadge}</div>`;
                     }
                     
-                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${spot.latitude},${spot.longitude}', '_blank')"><b>🚗 Οδηγίες GPS</b></button>`;
+                    let buttonsHtml = `<button class="nav-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${spot.latitude},${spot.longitude}&travelmode=driving', '_blank')"><b>🚗 Οδηγίες GPS</b></button>`;
                     
                     if (isBooked) {
                         if (bookedByMe) {
@@ -1155,6 +1155,8 @@
             officialMarkers.forEach(m => map.removeLayer(m)); officialMarkers = [];
 
             offData.forEach(p => {
+                if (filterStatus !== 'all' && filterStatus !== 'official') return; // Κρύβει τα επίσημα αν ζητηθούν μόνο θέσεις δρόμου
+
                 let isOpen = isParkingOpenNow(p.hours_weekday, p.hours_saturday, p.hours_sunday) && !p.is_closed_today;
                 let statusText = "";
                 let bgOpacity = isOpen ? "1" : "0.5"; 
@@ -1164,13 +1166,13 @@
                 else if (p.status === "YELLOW") { statusText = `<b style="color:#e0a800;">🟡 Λίγες Θέσεις</b>`; }
                 else { statusText = `<b style="color:green;">🟢 Διαθέσιμο</b>`; }
 
-                // CUSTOM RED MARKER ME 'P'
+                // CUSTOM AMBER MARKER ME 'P' 45x45
                 let pIcon = L.divIcon({ 
                     className: 'custom-p-icon', 
-                    html: `<div style="background:#dc3545; color:white; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:2px solid white; font-weight:bold; font-size:18px; box-shadow:0 2px 5px rgba(0,0,0,0.5); opacity:${bgOpacity};">P</div>`, 
-                    iconSize: [30,30], 
-                    iconAnchor: [15,30],
-                    popupAnchor: [0, -30]
+                    html: `<div style="background:#f59e0b; color:white; border-radius:50%; width:45px; height:45px; display:flex; align-items:center; justify-content:center; border:3px solid white; font-weight:bold; font-size:24px; box-shadow:0 2px 5px rgba(0,0,0,0.5); opacity:${bgOpacity};">P</div>`, 
+                    iconSize: [45,45], 
+                    iconAnchor: [22,45],
+                    popupAnchor: [0, -45]
                 });
                 
                 // SLIDER (CAROUSEL) ΦΩΤΟΓΡΑΦΙΩΝ
@@ -1191,7 +1193,7 @@
                     ${pPhone}
                     <hr style="margin:5px 0;">
                     <p style="font-size:11px; color:#555; margin:0;">⏰ Καθημ: ${p.hours_weekday} | Σαβ: ${p.hours_saturday} | Κυρ: ${p.hours_sunday}</p>
-                    <button class="nav-btn" style="margin-top:8px; background-color:#dc3545;" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}', '_blank')"><b>🚗 Πλοήγηση Στο Πάρκινγκ</b></button>
+                    <button class="nav-btn" style="margin-top:8px; background-color:#dc3545;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}&travelmode=driving', '_blank')"><b>🚗 Πλοήγηση Στο Πάρκινγκ</b></button>
                 </div>`;
                 
                 let marker = L.marker([p.latitude, p.longitude], {icon: pIcon}).addTo(map).bindPopup(popupContent);
